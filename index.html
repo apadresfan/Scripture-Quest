@@ -38,8 +38,9 @@
   </script>
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
   <style>
-    /* Prevent any scrolling on page viewport */
+    /* Strict Viewport fit - Zero scrolling allowed */
     html, body {
       height: 100%;
       height: 100dvh;
@@ -54,6 +55,14 @@
     }
     .mic-active {
       animation: pulse-ring 1.6s infinite ease-in-out;
+    }
+
+    @keyframes live-listen-pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.2); }
+    }
+    .live-dot {
+      animation: live-listen-pulse 1s infinite ease-in-out;
     }
     
     @keyframes wave-bar {
@@ -84,7 +93,12 @@
         <div class="w-8 h-8 rounded-full bg-gold-500/20 border border-gold-500/50 flex items-center justify-center text-gold-400 font-serif text-base shadow-inner">
           <i class="fa-solid fa-book-bible"></i>
         </div>
-        <h1 class="font-serif text-sm sm:text-base font-bold text-gold-400 leading-none">Bible Trivia</h1>
+        <div>
+          <h1 class="font-serif text-sm sm:text-base font-bold text-gold-400 leading-none">Bible Trivia</h1>
+          <span class="text-[9px] text-emerald-400 font-semibold tracking-tight flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block live-dot"></span> Live Voice
+          </span>
+        </div>
       </div>
 
       <!-- Stats Bar: High Score, Score, Level, Lives -->
@@ -107,7 +121,7 @@
           <span id="levelBadge" class="text-[10px] font-bold px-1.5 py-0.5 rounded text-emerald-400 bg-emerald-950/80 inline-block leading-none mt-0.5">EASY</span>
         </div>
 
-        <!-- Strikes / Lives -->
+        <!-- Lives / Strikes (3 Strikes System) -->
         <div class="text-center">
           <span class="text-[9px] uppercase tracking-wider text-parchment-200/60 block font-semibold leading-none">Lives</span>
           <div id="livesContainer" class="flex items-center justify-center space-x-0.5 mt-0.5">
@@ -123,7 +137,7 @@
         <button id="ttsToggleBtn" title="Toggle Narrator Voice" onclick="toggleTTS()" class="p-1.5 rounded-lg bg-royal-900 border border-gold-500/30 hover:border-gold-400 text-gold-400 text-xs">
           <i id="ttsIcon" class="fa-solid fa-volume-high"></i>
         </button>
-        <button id="helpBtn" onclick="openModal('instructionsModal')" class="p-1.5 rounded-lg bg-royal-900 border border-gold-500/30 hover:border-gold-400 text-gold-400 text-xs" title="Instructions">
+        <button id="helpBtn" onclick="openModal('instructionsModal')" class="p-1.5 rounded-lg bg-royal-900 border border-gold-500/30 hover:border-gold-400 text-gold-400 text-xs" title="Instructions & Audio Setup">
           <i class="fa-solid fa-circle-info"></i>
         </button>
       </div>
@@ -141,13 +155,18 @@
         <!-- Header Tag Inside Card -->
         <div class="flex items-center justify-between text-[10px] sm:text-xs font-semibold text-gold-400/80 uppercase tracking-widest flex-shrink-0 mb-1">
           <span id="questionNumTag">Question 1</span>
-          <span id="categoryTag" class="bg-gold-500/10 px-2 py-0.5 rounded border border-gold-500/20">General Scripture</span>
+          <div class="flex items-center space-x-2">
+            <span id="simultaneousBadge" class="bg-emerald-950/80 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-500/30 text-[9px]">
+              <i class="fa-solid fa-ear-listen mr-0.5"></i> Simultaneous Mic Active
+            </span>
+            <span id="categoryTag" class="bg-gold-500/10 px-2 py-0.5 rounded border border-gold-500/20">General Scripture</span>
+          </div>
         </div>
 
-        <!-- Question Prompt Text (Scaled line-height and font to prevent overflow) -->
+        <!-- Question Prompt Text -->
         <div class="flex-1 flex items-center justify-center my-1">
           <h2 id="questionText" class="text-base sm:text-xl md:text-2xl font-serif font-bold text-parchment-50 text-center leading-snug">
-            Press "Start Game" to begin your biblical trivia challenge!
+            Press "Start Game" to speak or select your answers while questions are read aloud!
           </h2>
         </div>
 
@@ -160,12 +179,12 @@
       </div>
     </div>
 
-    <!-- Multiple Choice Interactive Answer Buttons (2x2 Grid, Compact) -->
+    <!-- Multiple Choice Interactive Answer Buttons (2x2 Grid) -->
     <div id="optionsContainer" class="grid grid-cols-2 gap-2 my-1 flex-shrink-0">
       <!-- Generated dynamically -->
     </div>
 
-    <!-- Start / Next Action Button Bar -->
+    <!-- Action Button Bar -->
     <div class="flex justify-center flex-shrink-0 my-1">
       <button id="actionBtn" onclick="handleMainAction()" class="px-6 py-2 rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 text-royal-900 font-bold text-sm sm:text-base shadow-lg hover:from-gold-400 hover:to-gold-500 transform active:scale-95 transition-all flex items-center space-x-2">
         <i class="fa-solid fa-play"></i>
@@ -189,16 +208,16 @@
         </div>
         <i id="speechBannerIcon" class="fa-solid fa-volume-high text-gold-400 text-xs flex-shrink-0"></i>
         <div class="min-w-0 flex-1">
-          <p id="speechBannerText" class="text-[11px] sm:text-xs font-semibold text-parchment-100 truncate">Ready to play</p>
+          <p id="speechBannerText" class="text-[11px] sm:text-xs font-semibold text-parchment-100 truncate">Listening continuously (speak anytime)</p>
           <p id="transcriptText" class="text-[10px] text-parchment-200/60 truncate italic">Spoken answer will appear here...</p>
         </div>
       </div>
 
-      <!-- Center: Main Voice Microphone Push-to-Talk Button -->
+      <!-- Center: Main Voice Microphone Push-to-Talk / Toggle Button -->
       <div class="flex items-center space-x-2 flex-shrink-0">
         <button id="micBtn" onclick="toggleSpeechRecognition()" class="px-3.5 py-1.5 rounded-full bg-gradient-to-tr from-gold-600 to-gold-400 text-royal-900 text-sm font-bold flex items-center space-x-1.5 shadow-md active:scale-95 transition-all hover:brightness-110">
           <i id="micIcon" class="fa-solid fa-microphone"></i>
-          <span id="micBtnLabel" class="text-xs">Tap to Speak</span>
+          <span id="micBtnLabel" class="text-xs">Live Mic Active</span>
         </button>
       </div>
 
@@ -213,25 +232,29 @@
     </div>
   </footer>
 
-  <!-- Help & Instructions Modal -->
+  <!-- Help & Echo Instructions Modal -->
   <div id="instructionsModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-royal-800 border-2 border-gold-500/50 rounded-2xl max-w-sm w-full p-5 shadow-2xl relative text-parchment-100">
+    <div class="bg-royal-800 border-2 border-gold-500/50 rounded-2xl max-w-md w-full p-5 shadow-2xl relative text-parchment-100">
       <button onclick="closeModal('instructionsModal')" class="absolute top-3 right-3 text-parchment-200 hover:text-gold-400 text-base">
         <i class="fa-solid fa-xmark"></i>
       </button>
       <h3 class="font-serif text-lg font-bold text-gold-400 mb-2 flex items-center space-x-2">
-        <i class="fa-solid fa-circle-question"></i>
-        <span>How to Play</span>
+        <i class="fa-solid fa-headphones"></i>
+        <span>Simultaneous Voice Guide</span>
       </h3>
-      <ul class="text-xs space-y-2 text-parchment-200 list-disc list-inside">
-        <li><strong>Voice Control:</strong> Tap the gold "Tap to Speak" button at the bottom and state your choice (or option A, B, C, D).</li>
-        <li><strong>Touch Control:</strong> Tap option buttons directly.</li>
-        <li><strong>3 Strikes:</strong> You have 3 lives. Wrong answers read scripture context!</li>
-        <li><strong>Progressive Difficulty:</strong> Streaks unlock Harder questions!</li>
-      </ul>
+      <div class="space-y-2 text-xs text-parchment-200 leading-relaxed">
+        <p class="bg-gold-500/10 p-2 rounded border border-gold-500/30 text-gold-300">
+          <i class="fa-solid fa-circle-info mr-1"></i> <strong>Active Listening Enabled:</strong> The microphone listens for your answer <em>while</em> the question is being read! You can shout your answer at any time to interrupt.
+        </p>
+        <ul class="space-y-1.5 list-disc list-inside">
+          <li><strong>Headset Recommended:</strong> For best results with continuous mic listening while speakers play audio, wearing headphones prevents speaker echo.</li>
+          <li><strong>Acoustic Echo Cancellation:</strong> System browser-level noise suppression filters out speaker audio feedback.</li>
+          <li><strong>Voice Answer Keywords:</strong> Say full option names (e.g. "Bethlehem", "Moses") or options "A", "B", "C", "D".</li>
+        </ul>
+      </div>
       <div class="mt-4 text-center">
         <button onclick="closeModal('instructionsModal')" class="px-5 py-1.5 rounded-xl bg-gold-500 text-royal-900 font-bold text-xs hover:bg-gold-400">
-          Got it!
+          Got it, let's play!
         </button>
       </div>
     </div>
@@ -276,16 +299,36 @@
     let isQuestionAnswered = false;
     let highScore = parseInt(localStorage.getItem('bible_trivia_highscore') || '0');
 
-    // Voice Variables
+    // Voice & Speech Synthesis Variables
     let ttsEnabled = true;
     let activeUtterance = null;
     let ttsPulseInterval = null;
     let cachedVoices = [];
+    let isSpeaking = false;
+
+    // Speech Recognition & Echo Filtering
     let recognition = null;
     let isListening = false;
     let shouldBeListening = false;
+    let currentQuestionSpokenText = "";
 
-    // Speech Synthesis
+    // Request Mic with Echo Cancellation constraints for browser Audio API
+    async function initEchoCancelledAudioContext() {
+      try {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          await navigator.mediaDevices.getUserMedia({
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true
+            }
+          });
+        }
+      } catch (e) {
+        console.warn("Audio Echo Cancellation constraints fallback:", e);
+      }
+    }
+
     function initSpeechSynthesis() {
       if (!('speechSynthesis' in window)) {
         updateBanner("Voice TTS unavailable", "fa-volume-xmark");
@@ -309,8 +352,15 @@
       window.speechSynthesis.cancel();
       clearInterval(ttsPulseInterval);
 
+      isSpeaking = true;
+      currentQuestionSpokenText = text.toLowerCase();
       setWaveformVisible(true);
-      updateBanner("Speaking question...", "fa-volume-high");
+      updateBanner("Reading question (Mic listening)...", "fa-volume-high");
+
+      // Ensure Mic is active concurrently while TTS starts
+      if (recognition && isGameActive && !isQuestionAnswered) {
+        startListeningSafe();
+      }
 
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.rate = 0.95;
@@ -335,22 +385,24 @@
       utterance.onend = () => {
         clearInterval(ttsPulseInterval);
         activeUtterance = null;
+        isSpeaking = false;
         setWaveformVisible(false);
-        updateBanner("Listening for answer...", "fa-microphone");
+        updateBanner("Listening continuously...", "fa-microphone");
         if (onEndCallback) onEndCallback();
       };
 
       utterance.onerror = () => {
         clearInterval(ttsPulseInterval);
         activeUtterance = null;
+        isSpeaking = false;
         setWaveformVisible(false);
-        updateBanner("Ready", "fa-check");
         if (onEndCallback) onEndCallback();
       };
 
       try {
         window.speechSynthesis.speak(utterance);
       } catch (e) {
+        isSpeaking = false;
         setWaveformVisible(false);
       }
     }
@@ -366,6 +418,7 @@
       if (!ttsEnabled && window.speechSynthesis) {
         window.speechSynthesis.cancel();
         clearInterval(ttsPulseInterval);
+        isSpeaking = false;
         setWaveformVisible(false);
       }
       updateTTSButtonUI();
@@ -383,7 +436,6 @@
       }
     }
 
-    // Speech Recognition
     function initSpeechRecognition() {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
@@ -392,14 +444,13 @@
       }
 
       recognition = new SpeechRecognition();
-      recognition.continuous = false;
+      recognition.continuous = true; // Continuous listening alongside TTS
       recognition.interimResults = true;
       recognition.lang = 'en-US';
 
       recognition.onstart = () => {
         isListening = true;
         updateMicUI('listening');
-        updateBanner("Listening... speak answer", "fa-microphone");
       };
 
       recognition.onresult = (event) => {
@@ -411,14 +462,27 @@
           else interimTranscript += event.results[i][0].transcript;
         }
 
-        const currentText = finalTranscript || interimTranscript;
+        const currentText = (finalTranscript || interimTranscript).toLowerCase().trim();
         if (currentText) {
           document.getElementById('transcriptText').innerText = `"${currentText}"`;
           document.getElementById('transcriptText').className = "text-[10px] text-gold-300 font-bold truncate";
         }
 
         if (finalTranscript) {
-          updateMicUI('processing');
+          // Self-Speech Echo Filtering Guard:
+          // If the TTS speaker audio bled back into mic verbatim from question text, ignore it.
+          if (isSpeaking && isSelfSpeechEcho(finalTranscript)) {
+            console.log("Filtered self-speech echo bleeding from speaker.");
+            return;
+          }
+
+          // Stop TTS reading if user spoke a recognized answer mid-question
+          if (isSpeaking && window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+            isSpeaking = false;
+            setWaveformVisible(false);
+          }
+
           evaluateSpokenAnswer(finalTranscript);
         }
       };
@@ -427,20 +491,47 @@
         if (event.error === 'not-allowed') {
           shouldBeListening = false;
           updateMicUI('blocked');
-          updateBanner("Mic blocked in browser", "fa-lock");
-        } else {
-          updateBanner("Tap mic to retry", "fa-triangle-exclamation");
+          updateBanner("Mic permission denied", "fa-lock");
+        } else if (event.error !== 'no-speech') {
+          updateBanner("Listening for voice...", "fa-microphone");
         }
       };
 
       recognition.onend = () => {
         isListening = false;
         if (shouldBeListening && isGameActive && !isQuestionAnswered) {
-          try { recognition.start(); } catch (e) { updateMicUI('idle'); }
+          startListeningSafe();
         } else {
           updateMicUI('idle');
         }
       };
+    }
+
+    function isSelfSpeechEcho(transcript) {
+      if (!currentQuestionSpokenText) return false;
+      const cleanTranscript = transcript.toLowerCase().trim();
+      // If recognized text matches long parts of the question prompt itself without answer keywords, treat as echo
+      return (currentQuestionSpokenText.includes(cleanTranscript) && cleanTranscript.length > 8 && !isAnswerKeywordPresent(cleanTranscript));
+    }
+
+    function isAnswerKeywordPresent(transcript) {
+      if (!shuffledQuestions[currentQuestionIndex]) return false;
+      const q = shuffledQuestions[currentQuestionIndex];
+      const norm = transcript.toLowerCase();
+      if (['a', 'b', 'c', 'd'].some(letter => norm === letter || norm.includes(`option ${letter}`))) return true;
+      if (q.options.some(opt => norm.includes(opt.toLowerCase()))) return true;
+      if (q.keywords && q.keywords.some(kw => norm.includes(kw.toLowerCase()))) return true;
+      return false;
+    }
+
+    function startListeningSafe() {
+      if (!recognition) return;
+      try {
+        shouldBeListening = true;
+        recognition.start();
+      } catch (e) {
+        // Recognition already active
+      }
     }
 
     function toggleSpeechRecognition() {
@@ -453,9 +544,12 @@
         shouldBeListening = false;
         recognition.stop();
         updateMicUI('idle');
+        updateBanner("Mic paused", "fa-microphone-slash");
       } else {
+        initEchoCancelledAudioContext();
         shouldBeListening = true;
-        try { recognition.start(); } catch (e) {}
+        startListeningSafe();
+        updateBanner("Listening continuously...", "fa-microphone");
       }
     }
 
@@ -465,21 +559,21 @@
       const micLabel = document.getElementById('micBtnLabel');
 
       if (state === 'listening') {
-        micBtn.className = "px-3.5 py-1.5 rounded-full bg-gradient-to-tr from-amber-500 to-red-500 text-white text-xs font-bold flex items-center space-x-1.5 shadow-md mic-active";
+        micBtn.className = "px-3.5 py-1.5 rounded-full bg-gradient-to-tr from-amber-500 to-emerald-500 text-royal-900 text-xs font-bold flex items-center space-x-1.5 shadow-md mic-active";
         micIcon.className = "fa-solid fa-microphone animate-pulse";
-        micLabel.innerText = "Listening...";
+        micLabel.innerText = "Live Mic Active";
       } else if (state === 'processing') {
         micBtn.className = "px-3.5 py-1.5 rounded-full bg-gold-500 text-royal-900 text-xs font-bold flex items-center space-x-1.5 shadow-md";
         micIcon.className = "fa-solid fa-spinner fa-spin";
-        micLabel.innerText = "Thinking...";
+        micLabel.innerText = "Evaluating...";
       } else if (state === 'blocked' || state === 'unsupported') {
         micBtn.className = "px-3.5 py-1.5 rounded-full bg-gray-700 text-gray-400 text-xs font-bold flex items-center space-x-1.5 shadow-md cursor-not-allowed";
         micIcon.className = "fa-solid fa-microphone-slash";
-        micLabel.innerText = "Mic Off";
+        micLabel.innerText = "Mic Muted";
       } else {
         micBtn.className = "px-3.5 py-1.5 rounded-full bg-gradient-to-tr from-gold-600 to-gold-400 text-royal-900 text-xs font-bold flex items-center space-x-1.5 shadow-md active:scale-95 transition-all hover:brightness-110";
         micIcon.className = "fa-solid fa-microphone";
-        micLabel.innerText = "Tap to Speak";
+        micLabel.innerText = "Start Live Mic";
       }
     }
 
@@ -506,11 +600,13 @@
     }
 
     function startGame() {
+      initEchoCancelledAudioContext();
       currentScore = 0;
       currentLives = 3;
       streakCount = 0;
       currentLevel = 'easy';
       isGameActive = true;
+      shouldBeListening = true;
       
       shuffledQuestions = [...TRIVIA_DATABASE].sort(() => Math.random() - 0.5);
       currentQuestionIndex = 0;
@@ -555,21 +651,20 @@
         optionsContainer.appendChild(btn);
       });
 
+      // Speak question while simultaneous listening is primed
       const spokenPrompt = `${q.question} Is it: ${q.options.join(', ')}?`;
-      speakText(spokenPrompt, () => {
-        if (recognition && !isQuestionAnswered) {
-          shouldBeListening = true;
-          try { recognition.start(); } catch(e){}
-        }
-      });
+      speakText(spokenPrompt);
     }
 
     function handleAnswerSelect(selectedOption, clickedBtn = null) {
       if (isQuestionAnswered || !isGameActive) return;
       isQuestionAnswered = true;
 
-      shouldBeListening = false;
-      if (recognition && isListening) recognition.stop();
+      if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+        isSpeaking = false;
+        setWaveformVisible(false);
+      }
 
       const q = shuffledQuestions[currentQuestionIndex];
       const isCorrect = (selectedOption.toLowerCase() === q.answer.toLowerCase());
@@ -656,8 +751,9 @@
         });
       }
 
-      if (matchedOption) handleAnswerSelect(matchedOption);
-      else updateBanner(`Voice unrecognized. Try buttons.`, "fa-circle-question");
+      if (matchedOption) {
+        handleAnswerSelect(matchedOption);
+      }
     }
 
     function handleMainAction() {
@@ -670,6 +766,8 @@
 
     function endGame() {
       isGameActive = false;
+      shouldBeListening = false;
+      if (recognition && isListening) recognition.stop();
       document.getElementById('actionBtnText').innerText = "Play Again";
       document.getElementById('actionBtn').classList.remove('hidden');
     }
