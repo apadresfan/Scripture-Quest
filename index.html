@@ -101,7 +101,7 @@
         </div>
       </div>
 
-      <!-- Stats Bar: High Score, Score, Level, Lives -->
+      <!-- Stats Bar: High Score, Score, Level, Lives, Pool Left -->
       <div class="flex items-center space-x-2 sm:space-x-4">
         <!-- High Score -->
         <div class="text-center">
@@ -119,6 +119,12 @@
         <div class="text-center">
           <span class="text-[9px] uppercase tracking-wider text-parchment-200/60 block font-semibold leading-none">Level</span>
           <span id="levelBadge" class="text-[10px] font-bold px-1.5 py-0.5 rounded text-emerald-400 bg-emerald-950/80 inline-block leading-none mt-0.5">EASY</span>
+        </div>
+
+        <!-- Remaining Unasked Questions Counter -->
+        <div class="text-center hidden sm:block">
+          <span class="text-[9px] uppercase tracking-wider text-parchment-200/60 block font-semibold leading-none">Unique Left</span>
+          <span id="remainingPoolText" class="text-xs sm:text-sm font-bold text-emerald-400 leading-none">0</span>
         </div>
 
         <!-- Lives / Strikes (3 Strikes System) -->
@@ -156,8 +162,8 @@
         <div class="flex items-center justify-between text-[10px] sm:text-xs font-semibold text-gold-400/80 uppercase tracking-widest flex-shrink-0 mb-1">
           <span id="questionNumTag">Question 1</span>
           <div class="flex items-center space-x-2">
-            <span id="simultaneousBadge" class="bg-emerald-950/80 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-500/30 text-[9px]">
-              <i class="fa-solid fa-ear-listen mr-0.5"></i> Simultaneous Mic Active
+            <span id="noRepeatBadge" class="bg-amber-950/80 text-gold-300 px-1.5 py-0.5 rounded border border-gold-500/30 text-[9px] flex items-center gap-1">
+              <i class="fa-solid fa-shield-halved text-[8px]"></i> No Repeats Active
             </span>
             <span id="categoryTag" class="bg-gold-500/10 px-2 py-0.5 rounded border border-gold-500/20">General Scripture</span>
           </div>
@@ -166,7 +172,7 @@
         <!-- Question Prompt Text -->
         <div class="flex-1 flex items-center justify-center my-1">
           <h2 id="questionText" class="text-base sm:text-xl md:text-2xl font-serif font-bold text-parchment-50 text-center leading-snug">
-            Press "Start Game" to speak or select your answers while questions are read aloud!
+            Press "Start Game" to begin your challenge! Questions will never repeat during your session.
           </h2>
         </div>
 
@@ -244,11 +250,11 @@
       </h3>
       <div class="space-y-2 text-xs text-parchment-200 leading-relaxed">
         <p class="bg-gold-500/10 p-2 rounded border border-gold-500/30 text-gold-300">
-          <i class="fa-solid fa-circle-info mr-1"></i> <strong>Active Listening Enabled:</strong> The microphone listens for your answer <em>while</em> the question is being read! You can shout your answer at any time to interrupt.
+          <i class="fa-solid fa-circle-info mr-1"></i> <strong>Zero Questions Repeated:</strong> All trivia questions are drawn from a non-repeating pool. Questions will never be repeated during your game session.
         </p>
         <ul class="space-y-1.5 list-disc list-inside">
+          <li><strong>Active Listening Enabled:</strong> The microphone listens for your answer <em>while</em> the question is being read! You can shout your answer at any time to interrupt.</li>
           <li><strong>Headset Recommended:</strong> For best results with continuous mic listening while speakers play audio, wearing headphones prevents speaker echo.</li>
-          <li><strong>Acoustic Echo Cancellation:</strong> System browser-level noise suppression filters out speaker audio feedback.</li>
           <li><strong>Voice Answer Keywords:</strong> Say full option names (e.g. "Bethlehem", "Moses") or options "A", "B", "C", "D".</li>
         </ul>
       </div>
@@ -285,7 +291,9 @@
 
       // MASTER
       { id: 15, difficulty: 'master', category: 'Old Testament', question: 'Which priest and scribe led the second group returning from Babylon?', options: ['Ezra', 'Nehemiah', 'Zerubbabel', 'Haggai'], answer: 'Ezra', scripture: 'Ezra 7:6 - Ezra came up from Babylon, well versed in the Law of Moses.', keywords: ['ezra'] },
-      { id: 16, difficulty: 'master', category: 'New Testament', question: 'Which high priest presided over the trial of Jesus before the Sanhedrin?', options: ['Caiaphas', 'Annas', 'Gamaliel', 'Alexander'], answer: 'Caiaphas', scripture: 'Matthew 26:57 - Those who arrested Jesus took him to Caiaphas the high priest.', keywords: ['caiaphas'] }
+      { id: 16, difficulty: 'master', category: 'New Testament', question: 'Which high priest presided over the trial of Jesus before the Sanhedrin?', options: ['Caiaphas', 'Annas', 'Gamaliel', 'Alexander'], answer: 'Caiaphas', scripture: 'Matthew 26:57 - Those who arrested Jesus took him to Caiaphas the high priest.', keywords: ['caiaphas'] },
+      { id: 17, difficulty: 'master', category: 'Old Testament', question: 'Who was the grandfather of King David?', options: ['Boaz', 'Obed', 'Jesse', 'Salmon'], answer: 'Obed', scripture: 'Ruth 4:22 - Obed fathered Jesse, and Jesse fathered David.', keywords: ['obed'] },
+      { id: 18, difficulty: 'master', category: 'New Testament', question: 'How many people were baptized on the day of Pentecost?', options: ['3000', '5000', '120', '500'], answer: '3000', scripture: 'Acts 2:41 - And there were added that day about three thousand souls.', keywords: ['3000', 'three thousand'] }
     ];
 
     // Game Variables
@@ -293,11 +301,14 @@
     let currentLives = 3;
     let streakCount = 0;
     let currentLevel = 'easy';
-    let currentQuestionIndex = 0;
-    let shuffledQuestions = [];
+    let currentQuestion = null;
+    let questionCounter = 0;
     let isGameActive = false;
     let isQuestionAnswered = false;
     let highScore = parseInt(localStorage.getItem('bible_trivia_highscore') || '0');
+
+    // No-Repeat System Variable
+    let usedQuestionIds = new Set();
 
     // Voice & Speech Synthesis Variables
     let ttsEnabled = true;
@@ -312,7 +323,6 @@
     let shouldBeListening = false;
     let currentQuestionSpokenText = "";
 
-    // Request Mic with Echo Cancellation constraints for browser Audio API
     async function initEchoCancelledAudioContext() {
       try {
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
@@ -357,7 +367,6 @@
       setWaveformVisible(true);
       updateBanner("Reading question (Mic listening)...", "fa-volume-high");
 
-      // Ensure Mic is active concurrently while TTS starts
       if (recognition && isGameActive && !isQuestionAnswered) {
         startListeningSafe();
       }
@@ -408,9 +417,8 @@
     }
 
     function replayQuestionVoice() {
-      if (!shuffledQuestions[currentQuestionIndex]) return;
-      const q = shuffledQuestions[currentQuestionIndex];
-      speakText(q.question + ". Options: " + q.options.join(", "));
+      if (!currentQuestion) return;
+      speakText(currentQuestion.question + ". Options: " + currentQuestion.options.join(", "));
     }
 
     function toggleTTS() {
@@ -444,7 +452,7 @@
       }
 
       recognition = new SpeechRecognition();
-      recognition.continuous = true; // Continuous listening alongside TTS
+      recognition.continuous = true;
       recognition.interimResults = true;
       recognition.lang = 'en-US';
 
@@ -469,14 +477,10 @@
         }
 
         if (finalTranscript) {
-          // Self-Speech Echo Filtering Guard:
-          // If the TTS speaker audio bled back into mic verbatim from question text, ignore it.
           if (isSpeaking && isSelfSpeechEcho(finalTranscript)) {
-            console.log("Filtered self-speech echo bleeding from speaker.");
             return;
           }
 
-          // Stop TTS reading if user spoke a recognized answer mid-question
           if (isSpeaking && window.speechSynthesis) {
             window.speechSynthesis.cancel();
             isSpeaking = false;
@@ -510,13 +514,12 @@
     function isSelfSpeechEcho(transcript) {
       if (!currentQuestionSpokenText) return false;
       const cleanTranscript = transcript.toLowerCase().trim();
-      // If recognized text matches long parts of the question prompt itself without answer keywords, treat as echo
       return (currentQuestionSpokenText.includes(cleanTranscript) && cleanTranscript.length > 8 && !isAnswerKeywordPresent(cleanTranscript));
     }
 
     function isAnswerKeywordPresent(transcript) {
-      if (!shuffledQuestions[currentQuestionIndex]) return false;
-      const q = shuffledQuestions[currentQuestionIndex];
+      if (!currentQuestion) return false;
+      const q = currentQuestion;
       const norm = transcript.toLowerCase();
       if (['a', 'b', 'c', 'd'].some(letter => norm === letter || norm.includes(`option ${letter}`))) return true;
       if (q.options.some(opt => norm.includes(opt.toLowerCase()))) return true;
@@ -577,10 +580,38 @@
       }
     }
 
+    function getNextUnaskedQuestion() {
+      // Check if all questions in database have been asked
+      if (usedQuestionIds.size >= TRIVIA_DATABASE.length) {
+        // Entire question bank exhausted! Reset used pool and inform player
+        usedQuestionIds.clear();
+        updateBanner("All questions completed! Question pool refreshed.", "fa-rotate");
+      }
+
+      // Filter available questions by difficulty first
+      let candidates = TRIVIA_DATABASE.filter(q => q.difficulty === currentLevel && !usedQuestionIds.has(q.id));
+
+      // Fallback 1: If current difficulty is fully exhausted, draw from any remaining unasked question
+      if (candidates.length === 0) {
+        candidates = TRIVIA_DATABASE.filter(q => !usedQuestionIds.has(q.id));
+      }
+
+      // Randomly pick one candidate question
+      const randomIndex = Math.floor(Math.random() * candidates.length);
+      const selectedQuestion = candidates[randomIndex];
+
+      // Record ID so it NEVER repeats
+      usedQuestionIds.add(selectedQuestion.id);
+      return selectedQuestion;
+    }
+
     function updateScoreBoard() {
       document.getElementById('highScoreText').innerText = highScore;
       document.getElementById('scoreText').innerText = currentScore;
       
+      const remainingUnasked = TRIVIA_DATABASE.length - usedQuestionIds.size;
+      document.getElementById('remainingPoolText').innerText = remainingUnasked;
+
       const lvlBadge = document.getElementById('levelBadge');
       lvlBadge.innerText = currentLevel.toUpperCase();
       if (currentLevel === 'easy') lvlBadge.className = "text-[10px] font-bold px-1.5 py-0.5 rounded text-emerald-400 bg-emerald-950/80 inline-block leading-none mt-0.5";
@@ -604,12 +635,11 @@
       currentScore = 0;
       currentLives = 3;
       streakCount = 0;
+      questionCounter = 0;
       currentLevel = 'easy';
       isGameActive = true;
       shouldBeListening = true;
-      
-      shuffledQuestions = [...TRIVIA_DATABASE].sort(() => Math.random() - 0.5);
-      currentQuestionIndex = 0;
+      usedQuestionIds.clear(); // Fresh session starts with full unasked pool
 
       document.getElementById('actionBtnText').innerText = "Next Question";
       document.getElementById('actionBtn').classList.add('hidden');
@@ -619,10 +649,8 @@
     }
 
     function loadQuestion() {
-      if (currentQuestionIndex >= shuffledQuestions.length) {
-        shuffledQuestions = [...TRIVIA_DATABASE].sort(() => Math.random() - 0.5);
-        currentQuestionIndex = 0;
-      }
+      currentQuestion = getNextUnaskedQuestion();
+      questionCounter++;
 
       isQuestionAnswered = false;
       document.getElementById('scriptureCard').classList.add('hidden');
@@ -630,8 +658,8 @@
       document.getElementById('transcriptText').innerText = "Spoken answer will appear here...";
       document.getElementById('transcriptText').className = "text-[10px] text-parchment-200/60 truncate italic";
 
-      const q = shuffledQuestions[currentQuestionIndex];
-      document.getElementById('questionNumTag').innerText = `Question ${currentQuestionIndex + 1}`;
+      const q = currentQuestion;
+      document.getElementById('questionNumTag').innerText = `Question ${questionCounter}`;
       document.getElementById('categoryTag').innerText = q.category;
       document.getElementById('questionText').innerText = q.question;
 
@@ -651,7 +679,9 @@
         optionsContainer.appendChild(btn);
       });
 
-      // Speak question while simultaneous listening is primed
+      updateScoreBoard();
+
+      // Speak question while simultaneous listening is active
       const spokenPrompt = `${q.question} Is it: ${q.options.join(', ')}?`;
       speakText(spokenPrompt);
     }
@@ -666,7 +696,7 @@
         setWaveformVisible(false);
       }
 
-      const q = shuffledQuestions[currentQuestionIndex];
+      const q = currentQuestion;
       const isCorrect = (selectedOption.toLowerCase() === q.answer.toLowerCase());
 
       const optionBtns = document.querySelectorAll('.option-btn');
@@ -726,8 +756,8 @@
     }
 
     function evaluateSpokenAnswer(spokenText) {
-      if (isQuestionAnswered) return;
-      const q = shuffledQuestions[currentQuestionIndex];
+      if (isQuestionAnswered || !currentQuestion) return;
+      const q = currentQuestion;
       const normalizedSpoken = spokenText.toLowerCase().trim();
 
       const optionLetters = ['a', 'b', 'c', 'd'];
@@ -758,10 +788,7 @@
 
     function handleMainAction() {
       if (!isGameActive) startGame();
-      else {
-        currentQuestionIndex++;
-        loadQuestion();
-      }
+      else loadQuestion();
     }
 
     function endGame() {
@@ -790,6 +817,7 @@
       initSpeechSynthesis();
       initSpeechRecognition();
       document.getElementById('highScoreText').innerText = highScore;
+      document.getElementById('remainingPoolText').innerText = TRIVIA_DATABASE.length;
     };
   </script>
 </body>
