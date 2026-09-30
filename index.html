@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Bible Trivia Voice Challenge</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -39,21 +39,29 @@
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
+    /* Prevent any scrolling on page viewport */
+    html, body {
+      height: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      touch-action: manipulation;
+    }
+
     @keyframes pulse-ring {
       0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.7); }
-      70% { transform: scale(1.08); box-shadow: 0 0 0 15px rgba(234, 179, 8, 0); }
+      70% { transform: scale(1.08); box-shadow: 0 0 0 12px rgba(234, 179, 8, 0); }
       100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); }
     }
     .mic-active {
-      animation: pulse-ring 1.8s infinite ease-in-out;
+      animation: pulse-ring 1.6s infinite ease-in-out;
     }
     
     @keyframes wave-bar {
-      0%, 100% { height: 6px; }
-      50% { height: 28px; }
+      0%, 100% { height: 4px; }
+      50% { height: 20px; }
     }
     .wave-bar {
-      width: 4px;
+      width: 3px;
       background-color: #eab308;
       border-radius: 9999px;
       display: inline-block;
@@ -63,155 +71,103 @@
     .wave-bar:nth-child(3) { animation-delay: 0.4s; }
     .wave-bar:nth-child(4) { animation-delay: 0.1s; }
     .wave-bar:nth-child(5) { animation-delay: 0.3s; }
-
-    /* Custom scrollbar */
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.1); }
-    ::-webkit-scrollbar-thumb { background: rgba(234, 179, 8, 0.5); border-radius: 3px; }
   </style>
 </head>
-<body class="bg-royal-900 text-parchment-100 min-h-screen flex flex-col font-sans selection:bg-gold-500 selection:text-royal-900">
+<body class="bg-royal-900 text-parchment-100 h-full max-h-screen flex flex-col font-sans selection:bg-gold-500 selection:text-royal-900 overflow-hidden">
 
-  <!-- Top Navigation Header -->
-  <header class="bg-royal-800/90 border-b border-gold-500/30 backdrop-blur-md sticky top-0 z-40 px-4 py-3">
+  <!-- TOP COMPACT HEADER / STATS BAR -->
+  <header class="bg-royal-800/90 border-b border-gold-500/30 px-3 py-1.5 flex-shrink-0">
     <div class="max-w-4xl mx-auto flex items-center justify-between">
-      <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 rounded-full bg-gold-500/20 border border-gold-500/50 flex items-center justify-center text-gold-400 font-serif text-xl shadow-inner">
-          <i class="fa-solid font-bold fa-book-bible"></i>
+      
+      <!-- Brand Logo -->
+      <div class="flex items-center space-x-2">
+        <div class="w-8 h-8 rounded-full bg-gold-500/20 border border-gold-500/50 flex items-center justify-center text-gold-400 font-serif text-base shadow-inner">
+          <i class="fa-solid fa-book-bible"></i>
         </div>
-        <div>
-          <h1 class="font-serif text-lg md:text-xl font-bold tracking-wide text-gold-400 leading-tight">Bible Voice Trivia</h1>
-          <p class="text-xs text-parchment-200/70 hidden sm:block">Test your knowledge through Voice or Touch</p>
+        <h1 class="font-serif text-sm sm:text-base font-bold text-gold-400 leading-none">Bible Trivia</h1>
+      </div>
+
+      <!-- Stats Bar: High Score, Score, Level, Lives -->
+      <div class="flex items-center space-x-2 sm:space-x-4">
+        <!-- High Score -->
+        <div class="text-center">
+          <span class="text-[9px] uppercase tracking-wider text-parchment-200/60 block font-semibold leading-none">High</span>
+          <span id="highScoreText" class="text-xs sm:text-sm font-bold text-gold-400 leading-none">0</span>
+        </div>
+
+        <!-- Current Score -->
+        <div class="text-center">
+          <span class="text-[9px] uppercase tracking-wider text-parchment-200/60 block font-semibold leading-none">Score</span>
+          <span id="scoreText" class="text-xs sm:text-sm font-bold text-white leading-none">0</span>
+        </div>
+
+        <!-- Level Badge -->
+        <div class="text-center">
+          <span class="text-[9px] uppercase tracking-wider text-parchment-200/60 block font-semibold leading-none">Level</span>
+          <span id="levelBadge" class="text-[10px] font-bold px-1.5 py-0.5 rounded text-emerald-400 bg-emerald-950/80 inline-block leading-none mt-0.5">EASY</span>
+        </div>
+
+        <!-- Strikes / Lives -->
+        <div class="text-center">
+          <span class="text-[9px] uppercase tracking-wider text-parchment-200/60 block font-semibold leading-none">Lives</span>
+          <div id="livesContainer" class="flex items-center justify-center space-x-0.5 mt-0.5">
+            <i class="fa-solid fa-heart text-red-500 text-xs"></i>
+            <i class="fa-solid fa-heart text-red-500 text-xs"></i>
+            <i class="fa-solid fa-heart text-red-500 text-xs"></i>
+          </div>
         </div>
       </div>
 
-      <!-- Control Bar Toggles -->
-      <div class="flex items-center space-x-2">
-        <button id="ttsToggleBtn" title="Toggle Voice Narrator" onclick="toggleTTS()" class="px-3 py-1.5 rounded-lg bg-royal-900/80 border border-gold-500/30 hover:border-gold-400 text-xs sm:text-sm font-medium flex items-center space-x-1.5 transition-all">
-          <i id="ttsIcon" class="fa-solid fa-volume-high text-gold-400"></i>
-          <span id="ttsLabel" class="hidden sm:inline">Voice: ON</span>
+      <!-- Header Toggles & Help -->
+      <div class="flex items-center space-x-1.5">
+        <button id="ttsToggleBtn" title="Toggle Narrator Voice" onclick="toggleTTS()" class="p-1.5 rounded-lg bg-royal-900 border border-gold-500/30 hover:border-gold-400 text-gold-400 text-xs">
+          <i id="ttsIcon" class="fa-solid fa-volume-high"></i>
         </button>
-
-        <button id="micToggleBtn" title="Toggle Microphone Mode" onclick="toggleMicMode()" class="px-3 py-1.5 rounded-lg bg-royal-900/80 border border-gold-500/30 hover:border-gold-400 text-xs sm:text-sm font-medium flex items-center space-x-1.5 transition-all">
-          <i id="micModeIcon" class="fa-solid fa-microphone text-gold-400"></i>
-          <span id="micModeLabel" class="hidden sm:inline">Mic Mode</span>
-        </button>
-
-        <button id="helpBtn" onclick="openModal('instructionsModal')" class="p-2 rounded-lg bg-royal-900/80 border border-gold-500/30 hover:border-gold-400 text-gold-400 text-xs sm:text-sm transition-all" title="Instructions">
+        <button id="helpBtn" onclick="openModal('instructionsModal')" class="p-1.5 rounded-lg bg-royal-900 border border-gold-500/30 hover:border-gold-400 text-gold-400 text-xs" title="Instructions">
           <i class="fa-solid fa-circle-info"></i>
         </button>
       </div>
+
     </div>
   </header>
 
-  <!-- Main Game Container -->
-  <main class="flex-1 max-w-4xl w-full mx-auto p-4 flex flex-col justify-between">
+  <!-- MIDDLE MAIN CONTENT AREA (Flex-1, Fits viewport) -->
+  <main class="flex-1 max-w-4xl w-full mx-auto p-2 sm:p-3 flex flex-col justify-between overflow-hidden relative">
     
-    <!-- Top Status Bar: High Score, Score, Level, Lives -->
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 my-2">
-      <!-- High Score -->
-      <div class="bg-royal-800/50 border border-gold-500/20 rounded-xl p-2.5 text-center">
-        <span class="text-[10px] uppercase tracking-widest text-parchment-200/60 block font-semibold">High Score</span>
-        <span id="highScoreText" class="text-lg font-bold text-gold-400">0</span>
-      </div>
-      <!-- Current Score -->
-      <div class="bg-royal-800/50 border border-gold-500/20 rounded-xl p-2.5 text-center">
-        <span class="text-[10px] uppercase tracking-widest text-parchment-200/60 block font-semibold">Score</span>
-        <span id="scoreText" class="text-lg font-bold text-white">0</span>
-      </div>
-      <!-- Difficulty Level -->
-      <div class="bg-royal-800/50 border border-gold-500/20 rounded-xl p-2.5 text-center">
-        <span class="text-[10px] uppercase tracking-widest text-parchment-200/60 block font-semibold">Level</span>
-        <span id="levelBadge" class="text-sm font-bold px-2 py-0.5 rounded text-emerald-400 bg-emerald-950/60 inline-block mt-0.5">EASY</span>
-      </div>
-      <!-- Strikes / Lives -->
-      <div class="bg-royal-800/50 border border-gold-500/20 rounded-xl p-2.5 text-center">
-        <span class="text-[10px] uppercase tracking-widest text-parchment-200/60 block font-semibold">Lives</span>
-        <div id="livesContainer" class="flex items-center justify-center space-x-1 mt-1">
-          <i class="fa-solid fa-heart text-red-500 text-sm"></i>
-          <i class="fa-solid fa-heart text-red-500 text-sm"></i>
-          <i class="fa-solid fa-heart text-red-500 text-sm"></i>
-        </div>
-      </div>
-    </div>
-
-    <!-- Notification / Speech Status Banner -->
-    <div id="speechBanner" class="min-h-[44px] my-2 bg-royal-800/80 border border-gold-500/30 rounded-xl p-2.5 flex items-center justify-between transition-all">
-      <div class="flex items-center space-x-3">
-        <!-- Visual Waveform Animation when speaking -->
-        <div id="speakingWaveform" class="hidden items-center space-x-1 h-6">
-          <div class="wave-bar"></div>
-          <div class="wave-bar"></div>
-          <div class="wave-bar"></div>
-          <div class="wave-bar"></div>
-          <div class="wave-bar"></div>
-        </div>
-        <i id="speechBannerIcon" class="fa-solid fa-volume-high text-gold-400 text-sm"></i>
-        <span id="speechBannerText" class="text-xs sm:text-sm font-medium text-parchment-100">Ready to start trivia</span>
-      </div>
-      <!-- Replay Button -->
-      <button id="replayBtn" onclick="replayQuestionVoice()" class="px-2.5 py-1 rounded bg-gold-500/20 border border-gold-500/50 hover:bg-gold-500/30 text-gold-300 text-xs flex items-center space-x-1 transition-all">
-        <i class="fa-solid fa-rotate-right"></i>
-        <span>Replay Voice</span>
-      </button>
-    </div>
-
-    <!-- Question Box & Card -->
-    <div class="my-3 flex-1 flex flex-col justify-center">
-      <div class="bg-royal-800/90 border-2 border-gold-500/40 rounded-2xl p-6 sm:p-8 shadow-2xl relative overflow-hidden backdrop-blur-md">
-        <div class="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
-          <i class="fa-solid fa-cross text-8xl text-gold-400"></i>
-        </div>
+    <!-- Central Question & Scripture Card Container -->
+    <div class="flex-1 flex flex-col justify-center min-h-0 my-1">
+      <div class="bg-royal-800/90 border-2 border-gold-500/40 rounded-xl p-3 sm:p-5 shadow-2xl relative overflow-hidden flex flex-col justify-between h-full max-h-full">
         
-        <div class="flex items-center justify-between mb-3 text-xs font-semibold text-gold-400/80 uppercase tracking-widest">
+        <!-- Header Tag Inside Card -->
+        <div class="flex items-center justify-between text-[10px] sm:text-xs font-semibold text-gold-400/80 uppercase tracking-widest flex-shrink-0 mb-1">
           <span id="questionNumTag">Question 1</span>
           <span id="categoryTag" class="bg-gold-500/10 px-2 py-0.5 rounded border border-gold-500/20">General Scripture</span>
         </div>
 
-        <!-- Question Prompt Text -->
-        <h2 id="questionText" class="text-xl sm:text-2xl md:text-3xl font-serif font-bold text-parchment-50 leading-relaxed mb-4">
-          Press "Start Game" to begin your biblical trivia journey!
-        </h2>
-
-        <!-- Scripture Reference Popup Card (Displayed on wrong answer or after reveal) -->
-        <div id="scriptureCard" class="hidden mt-4 p-3.5 rounded-xl bg-amber-950/40 border border-gold-500/30 text-xs sm:text-sm text-parchment-200 animate-fade-in">
-          <p class="font-serif italic"><i class="fa-solid fa-bookmark text-gold-400 mr-2"></i><span id="scriptureText">Verse context will appear here.</span></p>
-          <span id="scriptureRef" class="block text-right text-gold-400 font-bold mt-1 text-xs">- Scripture Reference</span>
+        <!-- Question Prompt Text (Scaled line-height and font to prevent overflow) -->
+        <div class="flex-1 flex items-center justify-center my-1">
+          <h2 id="questionText" class="text-base sm:text-xl md:text-2xl font-serif font-bold text-parchment-50 text-center leading-snug">
+            Press "Start Game" to begin your biblical trivia challenge!
+          </h2>
         </div>
+
+        <!-- Embedded Scripture Verse Context Card (Appears on Incorrect Answer) -->
+        <div id="scriptureCard" class="hidden my-1 p-2 sm:p-2.5 rounded-lg bg-amber-950/60 border border-gold-500/40 text-xs text-parchment-200 flex-shrink-0">
+          <p class="font-serif italic leading-tight text-[11px] sm:text-xs"><i class="fa-solid fa-bookmark text-gold-400 mr-1.5"></i><span id="scriptureText">Scripture verse context will be read here.</span></p>
+          <span id="scriptureRef" class="block text-right text-gold-400 font-bold mt-0.5 text-[10px] sm:text-xs">- Scripture Reference</span>
+        </div>
+
       </div>
     </div>
 
-    <!-- Microphone Speech Answer Bar -->
-    <div id="micInteractionArea" class="bg-royal-800/70 border border-gold-500/30 rounded-2xl p-4 my-2 text-center relative shadow-lg">
-      <div class="flex flex-col items-center justify-center space-y-3">
-        
-        <!-- Large Interactive Microphone Trigger -->
-        <button id="micBtn" onclick="toggleSpeechRecognition()" class="w-16 h-16 rounded-full bg-gradient-to-tr from-gold-600 to-gold-400 text-royal-900 text-2xl flex items-center justify-center shadow-lg transform active:scale-95 transition-all hover:brightness-110 relative">
-          <i id="micIcon" class="fa-solid fa-microphone"></i>
-        </button>
-
-        <!-- Status Label -->
-        <div id="micStatusLabel" class="text-xs sm:text-sm font-semibold text-gold-300">
-          Tap microphone or speak your answer
-        </div>
-
-        <!-- Transcribed Live Voice Input Text Display -->
-        <div class="w-full bg-royal-900/80 rounded-xl p-3 border border-gold-500/20 min-h-[46px] flex items-center justify-center">
-          <p id="transcriptText" class="text-xs sm:text-sm italic text-parchment-200/70">
-            "Your spoken answer will appear here..."
-          </p>
-        </div>
-      </div>
+    <!-- Multiple Choice Interactive Answer Buttons (2x2 Grid, Compact) -->
+    <div id="optionsContainer" class="grid grid-cols-2 gap-2 my-1 flex-shrink-0">
+      <!-- Generated dynamically -->
     </div>
 
-    <!-- Multiple Choice Interactive Option Buttons -->
-    <div id="optionsContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3 my-2">
-      <!-- Option buttons dynamically generated -->
-    </div>
-
-    <!-- Action Bar (Start / Next Question) -->
-    <div class="flex justify-center mt-3 mb-2">
-      <button id="actionBtn" onclick="handleMainAction()" class="px-8 py-3 rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 text-royal-900 font-bold text-base sm:text-lg shadow-xl hover:from-gold-400 hover:to-gold-500 transform hover:-translate-y-0.5 transition-all flex items-center space-x-2">
+    <!-- Start / Next Action Button Bar -->
+    <div class="flex justify-center flex-shrink-0 my-1">
+      <button id="actionBtn" onclick="handleMainAction()" class="px-6 py-2 rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 text-royal-900 font-bold text-sm sm:text-base shadow-lg hover:from-gold-400 hover:to-gold-500 transform active:scale-95 transition-all flex items-center space-x-2">
         <i class="fa-solid fa-play"></i>
         <span id="actionBtnText">Start Game</span>
       </button>
@@ -219,62 +175,97 @@
 
   </main>
 
+  <!-- BOTTOM DEDICATED VOICE CONTROL BAR & MICROPHONE FOOTER -->
+  <footer class="bg-royal-800 border-t-2 border-gold-500/40 px-3 py-2 flex-shrink-0 z-30 shadow-2xl">
+    <div class="max-w-4xl mx-auto flex items-center justify-between space-x-2">
+      
+      <!-- Left: Audio Status & Animated Waveform -->
+      <div class="flex items-center space-x-2 flex-1 min-w-0">
+        <div id="speakingWaveform" class="hidden items-center space-x-1 h-5 flex-shrink-0">
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+        </div>
+        <i id="speechBannerIcon" class="fa-solid fa-volume-high text-gold-400 text-xs flex-shrink-0"></i>
+        <div class="min-w-0 flex-1">
+          <p id="speechBannerText" class="text-[11px] sm:text-xs font-semibold text-parchment-100 truncate">Ready to play</p>
+          <p id="transcriptText" class="text-[10px] text-parchment-200/60 truncate italic">Spoken answer will appear here...</p>
+        </div>
+      </div>
+
+      <!-- Center: Main Voice Microphone Push-to-Talk Button -->
+      <div class="flex items-center space-x-2 flex-shrink-0">
+        <button id="micBtn" onclick="toggleSpeechRecognition()" class="px-3.5 py-1.5 rounded-full bg-gradient-to-tr from-gold-600 to-gold-400 text-royal-900 text-sm font-bold flex items-center space-x-1.5 shadow-md active:scale-95 transition-all hover:brightness-110">
+          <i id="micIcon" class="fa-solid fa-microphone"></i>
+          <span id="micBtnLabel" class="text-xs">Tap to Speak</span>
+        </button>
+      </div>
+
+      <!-- Right: Replay Question Speech Button -->
+      <div class="flex items-center flex-shrink-0">
+        <button id="replayBtn" onclick="replayQuestionVoice()" title="Replay Question Audio" class="px-2.5 py-1.5 rounded-lg bg-gold-500/20 border border-gold-500/40 hover:bg-gold-500/30 text-gold-300 text-xs flex items-center space-x-1 transition-all">
+          <i class="fa-solid fa-rotate-right"></i>
+          <span class="hidden sm:inline">Replay</span>
+        </button>
+      </div>
+
+    </div>
+  </footer>
+
   <!-- Help & Instructions Modal -->
   <div id="instructionsModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-royal-800 border-2 border-gold-500/50 rounded-2xl max-w-md w-full p-6 shadow-2xl relative text-parchment-100">
-      <button onclick="closeModal('instructionsModal')" class="absolute top-4 right-4 text-parchment-200 hover:text-gold-400 text-lg">
+    <div class="bg-royal-800 border-2 border-gold-500/50 rounded-2xl max-w-sm w-full p-5 shadow-2xl relative text-parchment-100">
+      <button onclick="closeModal('instructionsModal')" class="absolute top-3 right-3 text-parchment-200 hover:text-gold-400 text-base">
         <i class="fa-solid fa-xmark"></i>
       </button>
-      <h3 class="font-serif text-xl font-bold text-gold-400 mb-3 flex items-center space-x-2">
+      <h3 class="font-serif text-lg font-bold text-gold-400 mb-2 flex items-center space-x-2">
         <i class="fa-solid fa-circle-question"></i>
         <span>How to Play</span>
       </h3>
-      <ul class="text-xs sm:text-sm space-y-2.5 text-parchment-200 list-disc list-inside">
-        <li><strong>Voice Response:</strong> Tap the big gold microphone button and speak your answer clearly. Fuzzy match allows natural speech (e.g. saying "Jesus" or "option A").</li>
-        <li><strong>Touch Response:</strong> Tap any of the option buttons directly.</li>
-        <li><strong>3 Strikes:</strong> You start with 3 lives. Each incorrect answer removes 1 life.</li>
-        <li><strong>Progressive Difficulty:</strong> Get correct streaks to advance from Easy to Master!</li>
-        <li><strong>Troubleshooting Mic/Speech:</strong> If speech stops working on Chrome or Mobile Safari, tap "🔊 Replay Voice" or toggle the Mic mode button.</li>
+      <ul class="text-xs space-y-2 text-parchment-200 list-disc list-inside">
+        <li><strong>Voice Control:</strong> Tap the gold "Tap to Speak" button at the bottom and state your choice (or option A, B, C, D).</li>
+        <li><strong>Touch Control:</strong> Tap option buttons directly.</li>
+        <li><strong>3 Strikes:</strong> You have 3 lives. Wrong answers read scripture context!</li>
+        <li><strong>Progressive Difficulty:</strong> Streaks unlock Harder questions!</li>
       </ul>
-      <div class="mt-6 text-center">
-        <button onclick="closeModal('instructionsModal')" class="px-6 py-2 rounded-xl bg-gold-500 text-royal-900 font-bold text-sm hover:bg-gold-400">
+      <div class="mt-4 text-center">
+        <button onclick="closeModal('instructionsModal')" class="px-5 py-1.5 rounded-xl bg-gold-500 text-royal-900 font-bold text-xs hover:bg-gold-400">
           Got it!
         </button>
       </div>
     </div>
   </div>
 
-  <!-- JavaScript App Logic -->
   <script>
-
-    // Dynamic Comprehensive Question Bank
+    // Comprehensive Question Database
     const TRIVIA_DATABASE = [
       // EASY
       { id: 1, difficulty: 'easy', category: 'Old Testament', question: 'Who built the ark to survive the great flood?', options: ['Noah', 'Moses', 'Abraham', 'David'], answer: 'Noah', scripture: 'Genesis 6:14 - Make yourself an ark of gopher wood.', keywords: ['noah'] },
       { id: 2, difficulty: 'easy', category: 'New Testament', question: 'In what town was Jesus born?', options: ['Bethlehem', 'Nazareth', 'Jerusalem', 'Capernaum'], answer: 'Bethlehem', scripture: 'Micah 5:2 / Matthew 2:1 - Jesus was born in Bethlehem of Judea.', keywords: ['bethlehem'] },
-      { id: 3, difficulty: 'easy', category: 'Old Testament', question: 'Who defeated the giant Goliath with a sling and a stone?', options: ['David', 'Saul', 'Solomon', 'Samson'], answer: 'David', scripture: '1 Samuel 17:50 - So David prevailed over the Philistine with a sling and a stone.', keywords: ['david'] },
+      { id: 3, difficulty: 'easy', category: 'Old Testament', question: 'Who defeated Goliath with a sling and a stone?', options: ['David', 'Saul', 'Solomon', 'Samson'], answer: 'David', scripture: '1 Samuel 17:50 - So David prevailed over the Philistine with a sling and a stone.', keywords: ['david'] },
       { id: 4, difficulty: 'easy', category: 'New Testament', question: 'How many disciples did Jesus choose to follow him closely?', options: ['12', '10', '7', '40'], answer: '12', scripture: 'Matthew 10:1 - And he called to him his twelve disciples.', keywords: ['12', 'twelve'] },
       { id: 5, difficulty: 'easy', category: 'Old Testament', question: 'Who received the Ten Commandments on Mount Sinai?', options: ['Moses', 'Aaron', 'Joshua', 'Elijah'], answer: 'Moses', scripture: 'Exodus 20:1-17 - Moses brought down the tablets from Mount Sinai.', keywords: ['moses'] },
 
       // MEDIUM
-      { id: 6, difficulty: 'medium', category: 'Old Testament', question: 'Which prophet was swallowed by a great fish after fleeing God\'s call?', options: ['Jonah', 'Daniel', 'Isaiah', 'Ezekiel'], answer: 'Jonah', scripture: 'Jonah 1:17 - Now the Lord had prepared a great fish to swallow up Jonah.', keywords: ['jonah'] },
+      { id: 6, difficulty: 'medium', category: 'Old Testament', question: 'Which prophet was swallowed by a great fish?', options: ['Jonah', 'Daniel', 'Isaiah', 'Ezekiel'], answer: 'Jonah', scripture: 'Jonah 1:17 - Now the Lord had prepared a great fish to swallow up Jonah.', keywords: ['jonah'] },
       { id: 7, difficulty: 'medium', category: 'New Testament', question: 'Who was the first Christian martyr to be stoned to death?', options: ['Stephen', 'Paul', 'Peter', 'James'], answer: 'Stephen', scripture: 'Acts 7:59 - And as they were stoning Stephen, he called out, "Lord Jesus, receive my spirit."', keywords: ['stephen', 'steven'] },
-      { id: 8, difficulty: 'medium', category: 'Old Testament', question: 'Which king of Israel was famous for his great wisdom and building the First Temple?', options: ['Solomon', 'David', 'Hezekiah', 'Josiah'], answer: 'Solomon', scripture: '1 Kings 3:12 - I give you a wise and discerning mind.', keywords: ['solomon'] },
-      { id: 9, difficulty: 'medium', category: 'New Testament', question: 'On what road was Saul traveling when he experienced his miraculous conversion?', options: ['Damascus', 'Jericho', 'Emmaus', 'Rome'], answer: 'Damascus', scripture: 'Acts 9:3 - As he journeyed he came near Damascus, and suddenly a light shone around him.', keywords: ['damascus'] },
-      { id: 10, difficulty: 'medium', category: 'Old Testament', question: 'What was the coat given to Joseph by his father Jacob made of?', options: ['Many colors', 'Pure linen', 'Camel hair', 'Purple silk'], answer: 'Many colors', scripture: 'Genesis 37:3 - Now Israel loved Joseph more than all his children... and he made him a coat of many colors.', keywords: ['many colors', 'colors', 'multicolor'] },
+      { id: 8, difficulty: 'medium', category: 'Old Testament', question: 'Which king was famous for his great wisdom and building the First Temple?', options: ['Solomon', 'David', 'Hezekiah', 'Josiah'], answer: 'Solomon', scripture: '1 Kings 3:12 - I give you a wise and discerning mind.', keywords: ['solomon'] },
+      { id: 9, difficulty: 'medium', category: 'New Testament', question: 'On what road was Saul traveling during his miraculous conversion?', options: ['Damascus', 'Jericho', 'Emmaus', 'Rome'], answer: 'Damascus', scripture: 'Acts 9:3 - As he journeyed he came near Damascus, and suddenly a light shone around him.', keywords: ['damascus'] },
+      { id: 10, difficulty: 'medium', category: 'Old Testament', question: 'What was the coat given to Joseph by his father Jacob made of?', options: ['Many colors', 'Pure linen', 'Camel hair', 'Purple silk'], answer: 'Many colors', scripture: 'Genesis 37:3 - Israel loved Joseph... and made him a coat of many colors.', keywords: ['many colors', 'colors'] },
 
       // HARD
-      { id: 11, difficulty: 'hard', category: 'Old Testament', question: 'Who was the female judge of Israel who led a victory over the Canaanites?', options: ['Deborah', 'Ruth', 'Esther', 'Jael'], answer: 'Deborah', scripture: 'Judges 4:4 - Now Deborah, a prophetess, the wife of Lappidoth, was judging Israel at that time.', keywords: ['deborah'] },
-      { id: 12, difficulty: 'hard', category: 'New Testament', question: 'Which island was John exiled to when he wrote the Book of Revelation?', options: ['Patmos', 'Malta', 'Crete', 'Cyprus'], answer: 'Patmos', scripture: 'Revelation 1:9 - I, John... was on the island called Patmos on account of the word of God.', keywords: ['patmos'] },
-      { id: 13, difficulty: 'hard', category: 'Old Testament', question: 'What prophet had a vision of a valley filled with dry bones coming to life?', options: ['Ezekiel', 'Jeremiah', 'Hosea', 'Amos'], answer: 'Ezekiel', scripture: 'Ezekiel 37:1 - The hand of the Lord was upon me, and he brought me out in the Spirit... and set me down in the middle of the valley; it was full of bones.', keywords: ['ezekiel'] },
-      { id: 14, difficulty: 'hard', category: 'New Testament', question: 'What short letter in the New Testament was written regarding a runaway slave named Onesimus?', options: ['Philemon', 'Titus', 'Galatians', '2 John'], answer: 'Philemon', scripture: 'Philemon 1:10 - I appeal to you for my child, Onesimus, whose father I became in my imprisonment.', keywords: ['philemon'] },
+      { id: 11, difficulty: 'hard', category: 'Old Testament', question: 'Who was the female judge of Israel who led a victory over Canaanites?', options: ['Deborah', 'Ruth', 'Esther', 'Jael'], answer: 'Deborah', scripture: 'Judges 4:4 - Deborah, a prophetess, was judging Israel at that time.', keywords: ['deborah'] },
+      { id: 12, difficulty: 'hard', category: 'New Testament', question: 'Which island was John exiled to when he wrote Revelation?', options: ['Patmos', 'Malta', 'Crete', 'Cyprus'], answer: 'Patmos', scripture: 'Revelation 1:9 - I, John... was on the island called Patmos.', keywords: ['patmos'] },
+      { id: 13, difficulty: 'hard', category: 'Old Testament', question: 'What prophet had a vision of a valley filled with dry bones?', options: ['Ezekiel', 'Jeremiah', 'Hosea', 'Amos'], answer: 'Ezekiel', scripture: 'Ezekiel 37:1 - The hand of the Lord brought me to a valley full of dry bones.', keywords: ['ezekiel'] },
+      { id: 14, difficulty: 'hard', category: 'New Testament', question: 'Which letter was written regarding a runaway slave named Onesimus?', options: ['Philemon', 'Titus', 'Galatians', '2 John'], answer: 'Philemon', scripture: 'Philemon 1:10 - I appeal to you for my child, Onesimus.', keywords: ['philemon'] },
 
       // MASTER
-      { id: 15, difficulty: 'master', category: 'Old Testament', question: 'Which priest and scribe led the second group of Jewish exiles returning from Babylon?', options: ['Ezra', 'Nehemiah', 'Zerubbabel', 'Haggai'], answer: 'Ezra', scripture: 'Ezra 7:6 - This Ezra came up from Babylon. He was a teacher well versed in the Law of Moses.', keywords: ['ezra'] },
-      { id: 16, difficulty: 'master', category: 'New Testament', question: 'Which high priest presided over the trial of Jesus before the Sanhedrin?', options: ['Caiaphas', 'Annas', 'Gamaliel', 'Alexander'], answer: 'Caiaphas', scripture: 'Matthew 26:57 - Those who had arrested Jesus took him to Caiaphas the high priest.', keywords: ['caiaphas'] }
+      { id: 15, difficulty: 'master', category: 'Old Testament', question: 'Which priest and scribe led the second group returning from Babylon?', options: ['Ezra', 'Nehemiah', 'Zerubbabel', 'Haggai'], answer: 'Ezra', scripture: 'Ezra 7:6 - Ezra came up from Babylon, well versed in the Law of Moses.', keywords: ['ezra'] },
+      { id: 16, difficulty: 'master', category: 'New Testament', question: 'Which high priest presided over the trial of Jesus before the Sanhedrin?', options: ['Caiaphas', 'Annas', 'Gamaliel', 'Alexander'], answer: 'Caiaphas', scripture: 'Matthew 26:57 - Those who arrested Jesus took him to Caiaphas the high priest.', keywords: ['caiaphas'] }
     ];
 
-    // Game State Variables
+    // Game Variables
     let currentScore = 0;
     let currentLives = 3;
     let streakCount = 0;
@@ -285,69 +276,53 @@
     let isQuestionAnswered = false;
     let highScore = parseInt(localStorage.getItem('bible_trivia_highscore') || '0');
 
-    // Speech Configuration Settings & Global Keep-alive References
+    // Voice Variables
     let ttsEnabled = true;
-    let micEnabled = true;
-    let activeUtterance = null; // Prevent Garbage Collection bug
+    let activeUtterance = null;
     let ttsPulseInterval = null;
     let cachedVoices = [];
-    
-    // Web Speech Recognition Engine
     let recognition = null;
     let isListening = false;
     let shouldBeListening = false;
 
-    
-    // Initialize & Populate TTS Voices
+    // Speech Synthesis
     function initSpeechSynthesis() {
       if (!('speechSynthesis' in window)) {
-        updateBanner("Speech synthesis not supported on this browser.", "fa-volume-xmark");
+        updateBanner("Voice TTS unavailable", "fa-volume-xmark");
         ttsEnabled = false;
         updateTTSButtonUI();
         return;
       }
-
-      function populateVoices() {
-        cachedVoices = window.speechSynthesis.getVoices();
-      }
-
+      function populateVoices() { cachedVoices = window.speechSynthesis.getVoices(); }
       populateVoices();
       if (speechSynthesis.onvoiceschanged !== undefined) {
         speechSynthesis.onvoiceschanged = populateVoices;
       }
     }
 
-    // Robust TTS Speak Function with Anti-Hanging / Anti-GC logic
     function speakText(text, onEndCallback) {
       if (!ttsEnabled || !('speechSynthesis' in window)) {
         if (onEndCallback) onEndCallback();
         return;
       }
 
-      // 1. Clear any stuck synthesis state
       window.speechSynthesis.cancel();
       clearInterval(ttsPulseInterval);
 
-      // Visual feedback
       setWaveformVisible(true);
       updateBanner("Speaking question...", "fa-volume-high");
 
-      // 2. Create new Utterance
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 0.95; // Slightly clear and deliberate
-      utterance.pitch = 1.0;
+      utterance.rate = 0.95;
 
-      // Select natural English voice if available
       if (cachedVoices.length > 0) {
         const preferredVoice = cachedVoices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('Daniel'))) || cachedVoices.find(v => v.lang.startsWith('en'));
         if (preferredVoice) utterance.voice = preferredVoice;
       }
 
-      // 3. Keep Global Reference to prevent GC bug
       activeUtterance = utterance;
       window.currentUtterance = utterance;
 
-      // 4. Implement Chrome/Browser Keep-Alive Pulse to prevent hang mid-sentence
       ttsPulseInterval = setInterval(() => {
         if (window.speechSynthesis.speaking) {
           window.speechSynthesis.pause();
@@ -360,35 +335,30 @@
       utterance.onend = () => {
         clearInterval(ttsPulseInterval);
         activeUtterance = null;
-        window.currentUtterance = null;
         setWaveformVisible(false);
         updateBanner("Listening for answer...", "fa-microphone");
         if (onEndCallback) onEndCallback();
       };
 
-      utterance.onerror = (err) => {
-        console.warn("TTS Error encountered:", err);
+      utterance.onerror = () => {
         clearInterval(ttsPulseInterval);
         activeUtterance = null;
         setWaveformVisible(false);
-        updateBanner("Voice playback interrupted.", "fa-triangle-exclamation");
+        updateBanner("Ready", "fa-check");
         if (onEndCallback) onEndCallback();
       };
 
-      // 5. Trigger Speak
       try {
         window.speechSynthesis.speak(utterance);
       } catch (e) {
-        console.error("Failed to execute speak():", e);
         setWaveformVisible(false);
       }
     }
 
-    // Replay Voice Button Trigger
     function replayQuestionVoice() {
       if (!shuffledQuestions[currentQuestionIndex]) return;
       const q = shuffledQuestions[currentQuestionIndex];
-      speakText(q.question + ". Options are: " + q.options.join(", "));
+      speakText(q.question + ". Options: " + q.options.join(", "));
     }
 
     function toggleTTS() {
@@ -404,20 +374,16 @@
     function updateTTSButtonUI() {
       const btn = document.getElementById('ttsToggleBtn');
       const icon = document.getElementById('ttsIcon');
-      const label = document.getElementById('ttsLabel');
-
       if (ttsEnabled) {
         icon.className = "fa-solid fa-volume-high text-gold-400";
-        label.innerText = "Voice: ON";
-        btn.classList.remove('opacity-60');
+        btn.classList.remove('opacity-50');
       } else {
         icon.className = "fa-solid fa-volume-xmark text-gray-400";
-        label.innerText = "Voice: OFF";
-        btn.classList.add('opacity-60');
+        btn.classList.add('opacity-50');
       }
     }
 
-
+    // Speech Recognition
     function initSpeechRecognition() {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
@@ -426,14 +392,14 @@
       }
 
       recognition = new SpeechRecognition();
-      recognition.continuous = false; // We handle continuous state via smart auto-restart
+      recognition.continuous = false;
       recognition.interimResults = true;
       recognition.lang = 'en-US';
 
       recognition.onstart = () => {
         isListening = true;
         updateMicUI('listening');
-        updateBanner("Listening carefully...", "fa-microphone");
+        updateBanner("Listening... speak answer", "fa-microphone");
       };
 
       recognition.onresult = (event) => {
@@ -441,18 +407,14 @@
         let finalTranscript = '';
 
         for (let i = event.resultIndex; i < event.results.length; ++i) {
-          if (event.results[i].isFinal) {
-            finalTranscript += event.results[i][0].transcript;
-          } else {
-            interimTranscript += event.results[i][0].transcript;
-          }
+          if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript;
+          else interimTranscript += event.results[i][0].transcript;
         }
 
         const currentText = finalTranscript || interimTranscript;
         if (currentText) {
           document.getElementById('transcriptText').innerText = `"${currentText}"`;
-          document.getElementById('transcriptText').classList.remove('italic', 'text-parchment-200/70');
-          document.getElementById('transcriptText').classList.add('text-gold-300', 'font-semibold');
+          document.getElementById('transcriptText').className = "text-[10px] text-gold-300 font-bold truncate";
         }
 
         if (finalTranscript) {
@@ -462,27 +424,19 @@
       };
 
       recognition.onerror = (event) => {
-        console.warn("Speech Recognition Error:", event.error);
-        if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+        if (event.error === 'not-allowed') {
           shouldBeListening = false;
           updateMicUI('blocked');
-          updateBanner("Microphone access blocked. Please allow permissions.", "fa-lock");
-        } else if (event.error === 'no-speech') {
-          updateBanner("No speech detected. Speak clearly into mic.", "fa-microphone-slash");
+          updateBanner("Mic blocked in browser", "fa-lock");
         } else {
-          updateBanner("Mic error (" + event.error + "). Tap mic to retry.", "fa-triangle-exclamation");
+          updateBanner("Tap mic to retry", "fa-triangle-exclamation");
         }
       };
 
       recognition.onend = () => {
         isListening = false;
-        // Auto-restart if user still has mic toggled on during an active unanswered question
         if (shouldBeListening && isGameActive && !isQuestionAnswered) {
-          try {
-            recognition.start();
-          } catch (e) {
-            updateMicUI('idle');
-          }
+          try { recognition.start(); } catch (e) { updateMicUI('idle'); }
         } else {
           updateMicUI('idle');
         }
@@ -501,93 +455,52 @@
         updateMicUI('idle');
       } else {
         shouldBeListening = true;
-        try {
-          recognition.start();
-        } catch (e) {
-          console.error("Recognition start failed:", e);
-        }
-      }
-    }
-
-    function toggleMicMode() {
-      micEnabled = !micEnabled;
-      const btn = document.getElementById('micToggleBtn');
-      const icon = document.getElementById('micModeIcon');
-      const label = document.getElementById('micModeLabel');
-      const micArea = document.getElementById('micInteractionArea');
-
-      if (micEnabled) {
-        icon.className = "fa-solid fa-microphone text-gold-400";
-        label.innerText = "Mic Mode";
-        btn.classList.remove('opacity-60');
-        micArea.classList.remove('hidden');
-      } else {
-        icon.className = "fa-solid fa-microphone-slash text-gray-400";
-        label.innerText = "Touch Only";
-        btn.classList.add('opacity-60');
-        micArea.classList.add('hidden');
-        if (isListening && recognition) {
-          shouldBeListening = false;
-          recognition.stop();
-        }
+        try { recognition.start(); } catch (e) {}
       }
     }
 
     function updateMicUI(state) {
       const micBtn = document.getElementById('micBtn');
       const micIcon = document.getElementById('micIcon');
-      const micStatusLabel = document.getElementById('micStatusLabel');
+      const micLabel = document.getElementById('micBtnLabel');
 
       if (state === 'listening') {
-        micBtn.className = "w-16 h-16 rounded-full bg-gradient-to-tr from-amber-500 to-red-500 text-white text-2xl flex items-center justify-center shadow-lg mic-active transition-all";
+        micBtn.className = "px-3.5 py-1.5 rounded-full bg-gradient-to-tr from-amber-500 to-red-500 text-white text-xs font-bold flex items-center space-x-1.5 shadow-md mic-active";
         micIcon.className = "fa-solid fa-microphone animate-pulse";
-        micStatusLabel.innerText = "Listening... Speak your answer now";
-        micStatusLabel.className = "text-xs sm:text-sm font-bold text-red-400 animate-pulse";
+        micLabel.innerText = "Listening...";
       } else if (state === 'processing') {
-        micBtn.className = "w-16 h-16 rounded-full bg-gold-500 text-royal-900 text-2xl flex items-center justify-center shadow-lg transition-all";
+        micBtn.className = "px-3.5 py-1.5 rounded-full bg-gold-500 text-royal-900 text-xs font-bold flex items-center space-x-1.5 shadow-md";
         micIcon.className = "fa-solid fa-spinner fa-spin";
-        micStatusLabel.innerText = "Evaluating answer...";
-        micStatusLabel.className = "text-xs sm:text-sm font-semibold text-gold-300";
-      } else if (state === 'blocked') {
-        micBtn.className = "w-16 h-16 rounded-full bg-gray-700 text-gray-400 text-2xl flex items-center justify-center shadow-lg cursor-not-allowed";
+        micLabel.innerText = "Thinking...";
+      } else if (state === 'blocked' || state === 'unsupported') {
+        micBtn.className = "px-3.5 py-1.5 rounded-full bg-gray-700 text-gray-400 text-xs font-bold flex items-center space-x-1.5 shadow-md cursor-not-allowed";
         micIcon.className = "fa-solid fa-microphone-slash";
-        micStatusLabel.innerText = "Mic access blocked in browser settings";
-        micStatusLabel.className = "text-xs sm:text-sm font-semibold text-red-400";
-      } else if (state === 'unsupported') {
-        micBtn.className = "w-16 h-16 rounded-full bg-gray-800 text-gray-500 text-2xl flex items-center justify-center cursor-not-allowed";
-        micIcon.className = "fa-solid fa-microphone-slash";
-        micStatusLabel.innerText = "Speech recognition not supported in this browser";
-        micStatusLabel.className = "text-xs sm:text-sm font-semibold text-gray-400";
+        micLabel.innerText = "Mic Off";
       } else {
-        // Idle
-        micBtn.className = "w-16 h-16 rounded-full bg-gradient-to-tr from-gold-600 to-gold-400 text-royal-900 text-2xl flex items-center justify-center shadow-lg transform active:scale-95 transition-all hover:brightness-110";
+        micBtn.className = "px-3.5 py-1.5 rounded-full bg-gradient-to-tr from-gold-600 to-gold-400 text-royal-900 text-xs font-bold flex items-center space-x-1.5 shadow-md active:scale-95 transition-all hover:brightness-110";
         micIcon.className = "fa-solid fa-microphone";
-        micStatusLabel.innerText = "Tap microphone to give verbal answer";
-        micStatusLabel.className = "text-xs sm:text-sm font-semibold text-gold-300";
+        micLabel.innerText = "Tap to Speak";
       }
     }
-
 
     function updateScoreBoard() {
       document.getElementById('highScoreText').innerText = highScore;
       document.getElementById('scoreText').innerText = currentScore;
       
-      // Update Level Badge
       const lvlBadge = document.getElementById('levelBadge');
       lvlBadge.innerText = currentLevel.toUpperCase();
-      if (currentLevel === 'easy') lvlBadge.className = "text-sm font-bold px-2 py-0.5 rounded text-emerald-400 bg-emerald-950/60 inline-block";
-      else if (currentLevel === 'medium') lvlBadge.className = "text-sm font-bold px-2 py-0.5 rounded text-sky-400 bg-sky-950/60 inline-block";
-      else if (currentLevel === 'hard') lvlBadge.className = "text-sm font-bold px-2 py-0.5 rounded text-amber-400 bg-amber-950/60 inline-block";
-      else lvlBadge.className = "text-sm font-bold px-2 py-0.5 rounded text-purple-400 bg-purple-950/60 inline-block";
+      if (currentLevel === 'easy') lvlBadge.className = "text-[10px] font-bold px-1.5 py-0.5 rounded text-emerald-400 bg-emerald-950/80 inline-block leading-none mt-0.5";
+      else if (currentLevel === 'medium') lvlBadge.className = "text-[10px] font-bold px-1.5 py-0.5 rounded text-sky-400 bg-sky-950/80 inline-block leading-none mt-0.5";
+      else if (currentLevel === 'hard') lvlBadge.className = "text-[10px] font-bold px-1.5 py-0.5 rounded text-amber-400 bg-amber-950/80 inline-block leading-none mt-0.5";
+      else lvlBadge.className = "text-[10px] font-bold px-1.5 py-0.5 rounded text-purple-400 bg-purple-950/80 inline-block leading-none mt-0.5";
 
-      // Render Lives / Hearts
       const livesContainer = document.getElementById('livesContainer');
       livesContainer.innerHTML = '';
       for (let i = 0; i < 3; i++) {
         if (i < currentLives) {
-          livesContainer.innerHTML += '<i class="fa-solid fa-heart text-red-500 text-sm"></i>';
+          livesContainer.innerHTML += '<i class="fa-solid fa-heart text-red-500 text-xs"></i>';
         } else {
-          livesContainer.innerHTML += '<i class="fa-solid fa-heart-crack text-gray-600 text-sm"></i>';
+          livesContainer.innerHTML += '<i class="fa-solid fa-heart-crack text-gray-600 text-xs"></i>';
         }
       }
     }
@@ -599,12 +512,11 @@
       currentLevel = 'easy';
       isGameActive = true;
       
-      // Shuffle questions
       shuffledQuestions = [...TRIVIA_DATABASE].sort(() => Math.random() - 0.5);
       currentQuestionIndex = 0;
 
       document.getElementById('actionBtnText').innerText = "Next Question";
-      document.getElementById('actionBtn').classList.add('hidden'); // Hide until answered
+      document.getElementById('actionBtn').classList.add('hidden');
 
       updateScoreBoard();
       loadQuestion();
@@ -612,7 +524,6 @@
 
     function loadQuestion() {
       if (currentQuestionIndex >= shuffledQuestions.length) {
-        // Re-shuffle if exhausted
         shuffledQuestions = [...TRIVIA_DATABASE].sort(() => Math.random() - 0.5);
         currentQuestionIndex = 0;
       }
@@ -620,47 +531,43 @@
       isQuestionAnswered = false;
       document.getElementById('scriptureCard').classList.add('hidden');
       document.getElementById('actionBtn').classList.add('hidden');
-      document.getElementById('transcriptText').innerText = '"Your spoken answer will appear here..."';
-      document.getElementById('transcriptText').className = "text-xs sm:text-sm italic text-parchment-200/70";
+      document.getElementById('transcriptText').innerText = "Spoken answer will appear here...";
+      document.getElementById('transcriptText').className = "text-[10px] text-parchment-200/60 truncate italic";
 
       const q = shuffledQuestions[currentQuestionIndex];
       document.getElementById('questionNumTag').innerText = `Question ${currentQuestionIndex + 1}`;
       document.getElementById('categoryTag').innerText = q.category;
       document.getElementById('questionText').innerText = q.question;
 
-      // Render Option Buttons
+      // Render 2x2 Grid Options
       const optionsContainer = document.getElementById('optionsContainer');
       optionsContainer.innerHTML = '';
 
       q.options.forEach((opt, idx) => {
-        const letter = String.fromCharCode(65 + idx); // A, B, C, D
+        const letter = String.fromCharCode(65 + idx);
         const btn = document.createElement('button');
-        btn.className = "option-btn p-3.5 rounded-xl bg-royal-800/80 border border-gold-500/30 hover:border-gold-400 hover:bg-royal-800 text-left flex items-center space-x-3 transition-all text-parchment-100 font-medium shadow-md";
+        btn.className = "option-btn p-2 sm:p-2.5 rounded-lg bg-royal-800/90 border border-gold-500/30 hover:border-gold-400 hover:bg-royal-800 text-left flex items-center space-x-2 transition-all text-parchment-100 font-medium shadow";
         btn.onclick = () => handleAnswerSelect(opt, btn);
         btn.innerHTML = `
-          <span class="w-7 h-7 rounded-lg bg-gold-500/20 border border-gold-500/40 text-gold-300 font-bold flex items-center justify-center text-xs flex-shrink-0">${letter}</span>
-          <span class="text-xs sm:text-sm">${opt}</span>
+          <span class="w-5 h-5 rounded bg-gold-500/20 border border-gold-500/40 text-gold-300 font-bold flex items-center justify-center text-[10px] flex-shrink-0">${letter}</span>
+          <span class="text-xs truncate">${opt}</span>
         `;
         optionsContainer.appendChild(btn);
       });
 
-      // Trigger TTS narration for new question
       const spokenPrompt = `${q.question} Is it: ${q.options.join(', ')}?`;
       speakText(spokenPrompt, () => {
-        // Auto-enable microphone listening when speech finishes (if mic mode is enabled)
-        if (micEnabled && recognition && !isQuestionAnswered) {
+        if (recognition && !isQuestionAnswered) {
           shouldBeListening = true;
           try { recognition.start(); } catch(e){}
         }
       });
     }
 
-    // Evaluate Option Selection (Touch or Voice)
     function handleAnswerSelect(selectedOption, clickedBtn = null) {
       if (isQuestionAnswered || !isGameActive) return;
       isQuestionAnswered = true;
 
-      // Stop mic recognition
       shouldBeListening = false;
       if (recognition && isListening) recognition.stop();
 
@@ -671,19 +578,15 @@
       optionBtns.forEach(btn => {
         btn.disabled = true;
         if (btn.innerText.includes(q.answer)) {
-          btn.classList.remove('bg-royal-800/80', 'border-gold-500/30');
-          btn.classList.add('bg-emerald-900/80', 'border-emerald-400', 'text-emerald-200');
+          btn.classList.remove('bg-royal-800/90', 'border-gold-500/30');
+          btn.classList.add('bg-emerald-900/90', 'border-emerald-400', 'text-emerald-200');
         }
       });
 
       if (isCorrect) {
-        if (clickedBtn && !clickedBtn.innerText.includes(q.answer)) {
-          // Highlight clicked button
-        }
         currentScore += (currentLevel === 'easy' ? 10 : currentLevel === 'medium' ? 20 : currentLevel === 'hard' ? 30 : 50);
         streakCount++;
         
-        // Dynamic Difficulty Adjustment
         if (streakCount >= 4) currentLevel = 'master';
         else if (streakCount >= 3) currentLevel = 'hard';
         else if (streakCount >= 2) currentLevel = 'medium';
@@ -694,14 +597,13 @@
         }
 
         updateScoreBoard();
-        updateBanner("Correct! Excellent job!", "fa-circle-check");
+        updateBanner("Correct! Well done!", "fa-circle-check");
         speakText("Correct! " + q.answer + " is the right answer.");
 
       } else {
-        // Incorrect
         if (clickedBtn) {
-          clickedBtn.classList.remove('bg-royal-800/80', 'border-gold-500/30');
-          clickedBtn.classList.add('bg-red-900/80', 'border-red-500', 'text-red-200');
+          clickedBtn.classList.remove('bg-royal-800/90', 'border-gold-500/30');
+          clickedBtn.classList.add('bg-red-900/90', 'border-red-500', 'text-red-200');
         }
 
         currentLives--;
@@ -709,9 +611,8 @@
         currentLevel = 'easy';
         updateScoreBoard();
 
-        // Reveal Scripture Reference Card
         document.getElementById('scriptureText').innerText = q.scripture;
-        document.getElementById('scriptureRef').innerText = `- Context Verse`;
+        document.getElementById('scriptureRef').innerText = `- Verse Context`;
         document.getElementById('scriptureCard').classList.remove('hidden');
 
         if (currentLives <= 0) {
@@ -720,23 +621,20 @@
           endGame();
           return;
         } else {
-          updateBanner(`Incorrect! Answer: ${q.answer}`, "fa-circle-xmark");
+          updateBanner(`Incorrect! Correct: ${q.answer}`, "fa-circle-xmark");
           speakText(`Incorrect. The correct answer was ${q.answer}. ${q.scripture}`);
         }
       }
 
-      // Show Next Question button
       document.getElementById('actionBtnText').innerText = "Next Question";
       document.getElementById('actionBtn').classList.remove('hidden');
     }
 
-    // Fuzzy Speech Answer Matcher
     function evaluateSpokenAnswer(spokenText) {
       if (isQuestionAnswered) return;
       const q = shuffledQuestions[currentQuestionIndex];
       const normalizedSpoken = spokenText.toLowerCase().trim();
 
-      // Check letter options spoken e.g. "option A", "B", "choose C"
       const optionLetters = ['a', 'b', 'c', 'd'];
       for (let i = 0; i < q.options.length; i++) {
         if (normalizedSpoken === optionLetters[i] || 
@@ -747,34 +645,24 @@
         }
       }
 
-      // Check keyword & direct answer matches
       let matchedOption = null;
       q.options.forEach(opt => {
-        if (normalizedSpoken.includes(opt.toLowerCase())) {
-          matchedOption = opt;
-        }
+        if (normalizedSpoken.includes(opt.toLowerCase())) matchedOption = opt;
       });
 
-      // Fallback check question keywords
       if (!matchedOption && q.keywords) {
         q.keywords.forEach(kw => {
-          if (normalizedSpoken.includes(kw.toLowerCase())) {
-            matchedOption = q.answer;
-          }
+          if (normalizedSpoken.includes(kw.toLowerCase())) matchedOption = q.answer;
         });
       }
 
-      if (matchedOption) {
-        handleAnswerSelect(matchedOption);
-      } else {
-        updateBanner(`Voice answer unrecognized. Try option buttons.`, "fa-circle-question");
-      }
+      if (matchedOption) handleAnswerSelect(matchedOption);
+      else updateBanner(`Voice unrecognized. Try buttons.`, "fa-circle-question");
     }
 
     function handleMainAction() {
-      if (!isGameActive) {
-        startGame();
-      } else {
+      if (!isGameActive) startGame();
+      else {
         currentQuestionIndex++;
         loadQuestion();
       }
@@ -786,10 +674,9 @@
       document.getElementById('actionBtn').classList.remove('hidden');
     }
 
-    // Helper Functions & Banner Utilities
     function updateBanner(message, iconClass) {
       document.getElementById('speechBannerText').innerText = message;
-      document.getElementById('speechBannerIcon').className = `fa-solid ${iconClass} text-gold-400 text-sm`;
+      document.getElementById('speechBannerIcon').className = `fa-solid ${iconClass} text-gold-400 text-xs flex-shrink-0`;
     }
 
     function setWaveformVisible(visible) {
@@ -798,15 +685,9 @@
       else waveform.classList.add('hidden');
     }
 
-    function openModal(id) {
-      document.getElementById(id).classList.remove('hidden');
-    }
+    function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
-    function closeModal(id) {
-      document.getElementById(id).classList.add('hidden');
-    }
-
-    // On Page Load Initialization
     window.onload = function() {
       initSpeechSynthesis();
       initSpeechRecognition();
