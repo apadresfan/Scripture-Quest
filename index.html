@@ -101,7 +101,7 @@
         </div>
       </div>
 
-      <!-- Stats Bar: High Score, Score, Level, Lives, Pool Left -->
+      <!-- Stats Bar: High Score, Score, Level, Progress towards next level, Lives -->
       <div class="flex items-center space-x-2 sm:space-x-4">
         <!-- High Score -->
         <div class="text-center">
@@ -121,10 +121,10 @@
           <span id="levelBadge" class="text-[10px] font-bold px-1.5 py-0.5 rounded text-emerald-400 bg-emerald-950/80 inline-block leading-none mt-0.5">EASY</span>
         </div>
 
-        <!-- Remaining Unasked Questions Counter -->
-        <div class="text-center hidden sm:block">
-          <span class="text-[9px] uppercase tracking-wider text-parchment-200/60 block font-semibold leading-none">Unique Left</span>
-          <span id="remainingPoolText" class="text-xs sm:text-sm font-bold text-emerald-400 leading-none">0</span>
+        <!-- 15 Correct Answers Level Progression Tracker -->
+        <div class="text-center">
+          <span class="text-[9px] uppercase tracking-wider text-parchment-200/60 block font-semibold leading-none">Lvl Progress</span>
+          <span id="levelProgressText" class="text-xs sm:text-sm font-bold text-gold-300 leading-none">0/15</span>
         </div>
 
         <!-- Lives / Strikes (3 Strikes System) -->
@@ -163,7 +163,7 @@
           <span id="questionNumTag">Question 1</span>
           <div class="flex items-center space-x-2">
             <span id="noRepeatBadge" class="bg-amber-950/80 text-gold-300 px-1.5 py-0.5 rounded border border-gold-500/30 text-[9px] flex items-center gap-1">
-              <i class="fa-solid fa-shield-halved text-[8px]"></i> No Repeats Active
+              <i class="fa-solid fa-layer-group text-[8px]"></i> 15 Correct to Advance
             </span>
             <span id="categoryTag" class="bg-gold-500/10 px-2 py-0.5 rounded border border-gold-500/20">General Scripture</span>
           </div>
@@ -172,7 +172,7 @@
         <!-- Question Prompt Text -->
         <div class="flex-1 flex items-center justify-center my-1">
           <h2 id="questionText" class="text-base sm:text-xl md:text-2xl font-serif font-bold text-parchment-50 text-center leading-snug">
-            Press "Start Game" to begin your challenge! Questions will never repeat during your session.
+            Answer 15 questions correctly in Easy mode to reach Medium! Press "Start Game" to begin.
           </h2>
         </div>
 
@@ -238,76 +238,127 @@
     </div>
   </footer>
 
-  <!-- Help & Echo Instructions Modal -->
+  <!-- Help Modal -->
   <div id="instructionsModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-royal-800 border-2 border-gold-500/50 rounded-2xl max-w-md w-full p-5 shadow-2xl relative text-parchment-100">
       <button onclick="closeModal('instructionsModal')" class="absolute top-3 right-3 text-parchment-200 hover:text-gold-400 text-base">
         <i class="fa-solid fa-xmark"></i>
       </button>
       <h3 class="font-serif text-lg font-bold text-gold-400 mb-2 flex items-center space-x-2">
-        <i class="fa-solid fa-headphones"></i>
-        <span>Simultaneous Voice Guide</span>
+        <i class="fa-solid fa-trophy"></i>
+        <span>15-Question Level Progression</span>
       </h3>
       <div class="space-y-2 text-xs text-parchment-200 leading-relaxed">
         <p class="bg-gold-500/10 p-2 rounded border border-gold-500/30 text-gold-300">
-          <i class="fa-solid fa-circle-info mr-1"></i> <strong>Zero Questions Repeated:</strong> All trivia questions are drawn from a non-repeating pool. Questions will never be repeated during your game session.
+          <i class="fa-solid fa-circle-info mr-1"></i> <strong>Progression Rule:</strong> You must answer <strong>exactly 15 questions correctly</strong> at your current level before advancing!
         </p>
         <ul class="space-y-1.5 list-disc list-inside">
-          <li><strong>Active Listening Enabled:</strong> The microphone listens for your answer <em>while</em> the question is being read! You can shout your answer at any time to interrupt.</li>
-          <li><strong>Headset Recommended:</strong> For best results with continuous mic listening while speakers play audio, wearing headphones prevents speaker echo.</li>
-          <li><strong>Voice Answer Keywords:</strong> Say full option names (e.g. "Bethlehem", "Moses") or options "A", "B", "C", "D".</li>
+          <li><strong>Easy Level:</strong> 15 correct answers required to advance to Medium.</li>
+          <li><strong>Medium Level:</strong> 15 correct answers required to advance to Hard.</li>
+          <li><strong>Hard Level:</strong> 15 correct answers required to reach Master level!</li>
+          <li><strong>3 Strikes System:</strong> You start with 3 lives. If you miss a question, a scripture verse will be read explaining the answer, and you lose 1 life.</li>
+          <li><strong>No Repeats:</strong> Trivia questions will never repeat during your session.</li>
         </ul>
       </div>
       <div class="mt-4 text-center">
         <button onclick="closeModal('instructionsModal')" class="px-5 py-1.5 rounded-xl bg-gold-500 text-royal-900 font-bold text-xs hover:bg-gold-400">
-          Got it, let's play!
+          Let's Play!
         </button>
       </div>
     </div>
   </div>
 
   <script>
-    // Comprehensive Question Database
+    // Comprehensive Expanded Bible Trivia Question Database
     const TRIVIA_DATABASE = [
-      // EASY
+      // EASY (20 Questions - 15 required to move to Medium)
       { id: 1, difficulty: 'easy', category: 'Old Testament', question: 'Who built the ark to survive the great flood?', options: ['Noah', 'Moses', 'Abraham', 'David'], answer: 'Noah', scripture: 'Genesis 6:14 - Make yourself an ark of gopher wood.', keywords: ['noah'] },
       { id: 2, difficulty: 'easy', category: 'New Testament', question: 'In what town was Jesus born?', options: ['Bethlehem', 'Nazareth', 'Jerusalem', 'Capernaum'], answer: 'Bethlehem', scripture: 'Micah 5:2 / Matthew 2:1 - Jesus was born in Bethlehem of Judea.', keywords: ['bethlehem'] },
       { id: 3, difficulty: 'easy', category: 'Old Testament', question: 'Who defeated Goliath with a sling and a stone?', options: ['David', 'Saul', 'Solomon', 'Samson'], answer: 'David', scripture: '1 Samuel 17:50 - So David prevailed over the Philistine with a sling and a stone.', keywords: ['david'] },
       { id: 4, difficulty: 'easy', category: 'New Testament', question: 'How many disciples did Jesus choose to follow him closely?', options: ['12', '10', '7', '40'], answer: '12', scripture: 'Matthew 10:1 - And he called to him his twelve disciples.', keywords: ['12', 'twelve'] },
       { id: 5, difficulty: 'easy', category: 'Old Testament', question: 'Who received the Ten Commandments on Mount Sinai?', options: ['Moses', 'Aaron', 'Joshua', 'Elijah'], answer: 'Moses', scripture: 'Exodus 20:1-17 - Moses brought down the tablets from Mount Sinai.', keywords: ['moses'] },
+      { id: 6, difficulty: 'easy', category: 'New Testament', question: 'What is the first book of the New Testament?', options: ['Matthew', 'Genesis', 'Mark', 'Revelation'], answer: 'Matthew', scripture: 'Matthew 1:1 - The book of the genealogy of Jesus Christ.', keywords: ['matthew'] },
+      { id: 7, difficulty: 'easy', category: 'Old Testament', question: 'What is the very first book of the Bible?', options: ['Genesis', 'Exodus', 'Psalms', 'Job'], answer: 'Genesis', scripture: 'Genesis 1:1 - In the beginning God created the heavens and the earth.', keywords: ['genesis'] },
+      { id: 8, difficulty: 'easy', category: 'New Testament', question: 'Who betrayed Jesus for thirty pieces of silver?', options: ['Judas Iscariot', 'Peter', 'Thomas', 'Pontius Pilate'], answer: 'Judas Iscariot', scripture: 'Matthew 26:14-15 - Judas Iscariot went to the chief priests.', keywords: ['judas'] },
+      { id: 9, difficulty: 'easy', category: 'Old Testament', question: 'What garden did Adam and Eve live in originally?', options: ['Eden', 'Gethsemane', 'Babylon', 'Carmel'], answer: 'Eden', scripture: 'Genesis 2:8 - And the Lord God planted a garden in Eden.', keywords: ['eden'] },
+      { id: 10, difficulty: 'easy', category: 'New Testament', question: 'Which disciple denied Jesus three times before the rooster crowed?', options: ['Peter', 'John', 'Andrew', 'Philip'], answer: 'Peter', scripture: 'Matthew 26:75 - Before the rooster crows, you will deny me three times.', keywords: ['peter'] },
+      { id: 11, difficulty: 'easy', category: 'Old Testament', question: 'Who was swallowed by a great fish after trying to flee from God?', options: ['Jonah', 'Daniel', 'Elijah', 'Amos'], answer: 'Jonah', scripture: 'Jonah 1:17 - The Lord prepared a great fish to swallow Jonah.', keywords: ['jonah'] },
+      { id: 12, difficulty: 'easy', category: 'New Testament', question: 'Which city was Jesus raised in as a young boy?', options: ['Nazareth', 'Bethlehem', 'Jericho', 'Damascus'], answer: 'Nazareth', scripture: 'Luke 2:39 - They returned into Galilee, to their own city Nazareth.', keywords: ['nazareth'] },
+      { id: 13, difficulty: 'easy', category: 'Old Testament', question: 'Who was the strongest man in the Bible whose strength was in his hair?', options: ['Samson', 'Gideon', 'Goliath', 'Saul'], answer: 'Samson', scripture: 'Judges 16:17 - A razor has never come upon my head.', keywords: ['samson'] },
+      { id: 14, difficulty: 'easy', category: 'New Testament', question: 'How many days and nights did Jesus fast in the wilderness?', options: ['40', '7', '12', '3'], answer: '40', scripture: 'Matthew 4:2 - And when he had fasted forty days and forty nights.', keywords: ['40', 'forty'] },
+      { id: 15, difficulty: 'easy', category: 'Old Testament', question: 'What sea did Moses part to let the Israelites escape Egypt?', options: ['Red Sea', 'Dead Sea', 'Sea of Galilee', 'Mediterranean Sea'], answer: 'Red Sea', scripture: 'Exodus 14:21 - Moses stretched out his hand over the sea, and the Lord parted the waters.', keywords: ['red sea', 'red'] },
+      { id: 16, difficulty: 'easy', category: 'New Testament', question: 'Who baptised Jesus in the Jordan River?', options: ['John the Baptist', 'Peter', 'Nicodemus', 'James'], answer: 'John the Baptist', scripture: 'Matthew 3:13 - Then Jesus came from Galilee to John at the Jordan to be baptized by him.', keywords: ['john the baptist', 'john'] },
+      { id: 17, difficulty: 'easy', category: 'Old Testament', question: 'Who was thrown into the lions den for praying to God?', options: ['Daniel', 'Shadrach', 'Joseph', 'Ezekiel'], answer: 'Daniel', scripture: 'Daniel 6:16 - So the king gave the command, and they brought Daniel and cast him into the den of lions.', keywords: ['daniel'] },
+      { id: 18, difficulty: 'easy', category: 'New Testament', question: 'What job did Jesus have before starting his public ministry?', options: ['Carpenter', 'Fisherman', 'Tentmaker', 'Shepherd'], answer: 'Carpenter', scripture: 'Mark 6:3 - Is not this the carpenter, the son of Mary?', keywords: ['carpenter'] },
+      { id: 19, difficulty: 'easy', category: 'Old Testament', question: 'Who was Adam\'s wife, created as his helpmate?', options: ['Eve', 'Sarah', 'Rebekah', 'Rachel'], answer: 'Eve', scripture: 'Genesis 3:20 - Adam called his wife\'s name Eve.', keywords: ['eve'] },
+      { id: 20, difficulty: 'easy', category: 'New Testament', question: 'What is the last book of the Holy Bible?', options: ['Revelation', 'Acts', 'Hebrews', 'Jude'], answer: 'Revelation', scripture: 'Revelation 1:1 - The Revelation of Jesus Christ.', keywords: ['revelation'] },
 
-      // MEDIUM
-      { id: 6, difficulty: 'medium', category: 'Old Testament', question: 'Which prophet was swallowed by a great fish?', options: ['Jonah', 'Daniel', 'Isaiah', 'Ezekiel'], answer: 'Jonah', scripture: 'Jonah 1:17 - Now the Lord had prepared a great fish to swallow up Jonah.', keywords: ['jonah'] },
-      { id: 7, difficulty: 'medium', category: 'New Testament', question: 'Who was the first Christian martyr to be stoned to death?', options: ['Stephen', 'Paul', 'Peter', 'James'], answer: 'Stephen', scripture: 'Acts 7:59 - And as they were stoning Stephen, he called out, "Lord Jesus, receive my spirit."', keywords: ['stephen', 'steven'] },
-      { id: 8, difficulty: 'medium', category: 'Old Testament', question: 'Which king was famous for his great wisdom and building the First Temple?', options: ['Solomon', 'David', 'Hezekiah', 'Josiah'], answer: 'Solomon', scripture: '1 Kings 3:12 - I give you a wise and discerning mind.', keywords: ['solomon'] },
-      { id: 9, difficulty: 'medium', category: 'New Testament', question: 'On what road was Saul traveling during his miraculous conversion?', options: ['Damascus', 'Jericho', 'Emmaus', 'Rome'], answer: 'Damascus', scripture: 'Acts 9:3 - As he journeyed he came near Damascus, and suddenly a light shone around him.', keywords: ['damascus'] },
-      { id: 10, difficulty: 'medium', category: 'Old Testament', question: 'What was the coat given to Joseph by his father Jacob made of?', options: ['Many colors', 'Pure linen', 'Camel hair', 'Purple silk'], answer: 'Many colors', scripture: 'Genesis 37:3 - Israel loved Joseph... and made him a coat of many colors.', keywords: ['many colors', 'colors'] },
+      // MEDIUM (20 Questions - 15 required to move to Hard)
+      { id: 21, difficulty: 'medium', category: 'Old Testament', question: 'Which prophet was taken up into heaven in a chariot of fire?', options: ['Elijah', 'Elisha', 'Isaiah', 'Jeremiah'], answer: 'Elijah', scripture: '2 Kings 2:11 - Behold, a chariot of fire and horses of fire... and Elijah went up by a whirlwind.', keywords: ['elijah'] },
+      { id: 22, difficulty: 'medium', category: 'New Testament', question: 'Who was the first Christian martyr to be stoned to death?', options: ['Stephen', 'Paul', 'Peter', 'James'], answer: 'Stephen', scripture: 'Acts 7:59 - And as they were stoning Stephen, he called out, "Lord Jesus, receive my spirit."', keywords: ['stephen', 'steven'] },
+      { id: 23, difficulty: 'medium', category: 'Old Testament', question: 'Which king of Israel built the First Temple in Jerusalem?', options: ['Solomon', 'David', 'Hezekiah', 'Josiah'], answer: 'Solomon', scripture: '1 Kings 6:1 - Solomon began to build the house of the Lord.', keywords: ['solomon'] },
+      { id: 24, difficulty: 'medium', category: 'New Testament', question: 'On what road was Saul traveling during his miraculous vision and conversion?', options: ['Damascus', 'Jericho', 'Emmaus', 'Rome'], answer: 'Damascus', scripture: 'Acts 9:3 - As he journeyed he came near Damascus, and suddenly a light shone around him.', keywords: ['damascus'] },
+      { id: 25, difficulty: 'medium', category: 'Old Testament', question: 'What coat was given to Joseph by his father Jacob?', options: ['Coat of many colors', 'Pure linen robe', 'Camel hair coat', 'Purple silk tunic'], answer: 'Coat of many colors', scripture: 'Genesis 37:3 - Israel loved Joseph... and made him a coat of many colors.', keywords: ['many colors', 'colors'] },
+      { id: 26, difficulty: 'medium', category: 'New Testament', question: 'In what garden did Jesus pray with deep agony before his arrest?', options: ['Gethsemane', 'Eden', 'Olivet', 'Gorgotha'], answer: 'Gethsemane', scripture: 'Matthew 26:36 - Then Jesus came with them to a place called Gethsemane.', keywords: ['gethsemane'] },
+      { id: 27, difficulty: 'medium', category: 'Old Testament', question: 'Who was the brother of Moses who served as the first High Priest?', options: ['Aaron', 'Hur', 'Joshua', 'Levi'], answer: 'Aaron', scripture: 'Exodus 28:1 - Take Aaron your brother... that he may minister to Me as priest.', keywords: ['aaron'] },
+      { id: 28, difficulty: 'medium', category: 'New Testament', question: 'Who wrote most of the letters and epistles in the New Testament?', options: ['Paul', 'Peter', 'John', 'Luke'], answer: 'Paul', scripture: 'Romans 1:1 - Paul, a bondservant of Jesus Christ, called to be an apostle.', keywords: ['paul'] },
+      { id: 29, difficulty: 'medium', category: 'Old Testament', question: 'How many plague judgments did God send upon Egypt?', options: ['10', '7', '12', '3'], answer: '10', scripture: 'Exodus 7-12 - Detailed the ten plagues brought upon Egypt.', keywords: ['10', 'ten'] },
+      { id: 30, difficulty: 'medium', category: 'New Testament', question: 'Who was raised from the dead by Jesus after being in the tomb four days?', options: ['Lazarus', 'Jairus daughter', 'Tabitha', 'Eutychus'], answer: 'Lazarus', scripture: 'John 11:43 - He cried with a loud voice, "Lazarus, come forth!"', keywords: ['lazarus'] },
+      { id: 31, difficulty: 'medium', category: 'Old Testament', question: 'Which queen saved the Jewish people from Hamans wicked plot?', options: ['Esther', 'Ruth', 'Bathsheba', 'Jezebel'], answer: 'Esther', scripture: 'Esther 7:3 - Let my life be given me at my petition, and my people at my request.', keywords: ['esther'] },
+      { id: 32, difficulty: 'medium', category: 'New Testament', question: 'Who climbed a sycamore fig tree to see Jesus passing by in Jericho?', options: ['Zacchaeus', 'Nicodemus', 'Bartimaeus', 'Cornelius'], answer: 'Zacchaeus', scripture: 'Luke 19:4 - So he ran ahead and climbed up into a sycamore tree to see Him.', keywords: ['zacchaeus'] },
+      { id: 33, difficulty: 'medium', category: 'Old Testament', question: 'What wall tumbled down after the Israelites marched around it seven days?', options: ['Jericho', 'Jerusalem', 'Babylon', 'Nineveh'], answer: 'Jericho', scripture: 'Joshua 6:20 - When the people shouted with a great shout, the wall fell down flat.', keywords: ['jericho'] },
+      { id: 34, difficulty: 'medium', category: 'New Testament', question: 'What did the Roman soldiers weave and place on Jesus head during his trial?', options: ['Crown of thorns', 'Golden wreath', 'Silver tiara', 'Olive wreath'], answer: 'Crown of thorns', scripture: 'Matthew 27:29 - When they had twisted a crown of thorns, they put it on His head.', keywords: ['thorns', 'crown of thorns'] },
+      { id: 35, difficulty: 'medium', category: 'Old Testament', question: 'Who was Abraham\'s wife who gave birth to Isaac in her old age?', options: ['Sarah', 'Rebekah', 'Rachel', 'Leah'], answer: 'Sarah', scripture: 'Genesis 21:2 - Sarah conceived and bore Abraham a son in his old age.', keywords: ['sarah'] },
+      { id: 36, difficulty: 'medium', category: 'New Testament', question: 'Which Roman governor sentenced Jesus to be crucified despite finding no fault?', options: ['Pontius Pilate', 'Herod', 'Felix', 'Festus'], answer: 'Pontius Pilate', scripture: 'Matthew 27:26 - When he had scourged Jesus, he delivered Him to be crucified.', keywords: ['pilate', 'pontius pilate'] },
+      { id: 37, difficulty: 'medium', category: 'Old Testament', question: 'Who was thrown into a fiery furnace along with Shadrach and Abednego?', options: ['Meshach', 'Daniel', 'Darius', 'Balthazar'], answer: 'Meshach', scripture: 'Daniel 3:23 - Shadrach, Meshach, and Abednego fell down bound into the midst of the burning fiery furnace.', keywords: ['meshach'] },
+      { id: 38, difficulty: 'medium', category: 'New Testament', question: 'Which miracle is recorded in all four Gospels?', options: ['Feeding 5000', 'Walking on water', 'Turning water to wine', 'Raising Lazarus'], answer: 'Feeding 5000', scripture: 'Matthew 14, Mark 6, Luke 9, John 6 - The feeding of the five thousand.', keywords: ['feeding 5000', '5000'] },
+      { id: 39, difficulty: 'medium', category: 'Old Testament', question: 'What was food provided miraculously by God to Israelites in the wilderness called?', options: ['Manna', 'Unleavened bread', 'Frankincense', 'Showbread'], answer: 'Manna', scripture: 'Exodus 16:31 - The house of Israel called its name Manna.', keywords: ['manna'] },
+      { id: 40, difficulty: 'medium', category: 'New Testament', question: 'Which Pharisee came to visit Jesus secretly at night?', options: ['Nicodemus', 'Gamaliel', 'Caiaphas', 'Joseph of Arimathea'], answer: 'Nicodemus', scripture: 'John 3:2 - This man came to Jesus by night and said, "Rabbi, we know you are a teacher from God."', keywords: ['nicodemus'] },
 
-      // HARD
-      { id: 11, difficulty: 'hard', category: 'Old Testament', question: 'Who was the female judge of Israel who led a victory over Canaanites?', options: ['Deborah', 'Ruth', 'Esther', 'Jael'], answer: 'Deborah', scripture: 'Judges 4:4 - Deborah, a prophetess, was judging Israel at that time.', keywords: ['deborah'] },
-      { id: 12, difficulty: 'hard', category: 'New Testament', question: 'Which island was John exiled to when he wrote Revelation?', options: ['Patmos', 'Malta', 'Crete', 'Cyprus'], answer: 'Patmos', scripture: 'Revelation 1:9 - I, John... was on the island called Patmos.', keywords: ['patmos'] },
-      { id: 13, difficulty: 'hard', category: 'Old Testament', question: 'What prophet had a vision of a valley filled with dry bones?', options: ['Ezekiel', 'Jeremiah', 'Hosea', 'Amos'], answer: 'Ezekiel', scripture: 'Ezekiel 37:1 - The hand of the Lord brought me to a valley full of dry bones.', keywords: ['ezekiel'] },
-      { id: 14, difficulty: 'hard', category: 'New Testament', question: 'Which letter was written regarding a runaway slave named Onesimus?', options: ['Philemon', 'Titus', 'Galatians', '2 John'], answer: 'Philemon', scripture: 'Philemon 1:10 - I appeal to you for my child, Onesimus.', keywords: ['philemon'] },
+      // HARD (20 Questions - 15 required to move to Master)
+      { id: 41, difficulty: 'hard', category: 'Old Testament', question: 'Who was the female judge of Israel who led a victory over Canaanites?', options: ['Deborah', 'Ruth', 'Esther', 'Jael'], answer: 'Deborah', scripture: 'Judges 4:4 - Deborah, a prophetess, was judging Israel at that time.', keywords: ['deborah'] },
+      { id: 42, difficulty: 'hard', category: 'New Testament', question: 'Which island was John exiled to when he wrote the Book of Revelation?', options: ['Patmos', 'Malta', 'Crete', 'Cyprus'], answer: 'Patmos', scripture: 'Revelation 1:9 - I, John... was on the island called Patmos.', keywords: ['patmos'] },
+      { id: 43, difficulty: 'hard', category: 'Old Testament', question: 'What prophet had a vision of a valley filled with dry bones coming back to life?', options: ['Ezekiel', 'Jeremiah', 'Hosea', 'Amos'], answer: 'Ezekiel', scripture: 'Ezekiel 37:1 - The hand of the Lord brought me to a valley full of dry bones.', keywords: ['ezekiel'] },
+      { id: 44, difficulty: 'hard', category: 'New Testament', question: 'Which letter was written by Paul regarding a runaway slave named Onesimus?', options: ['Philemon', 'Titus', 'Galatians', '2 John'], answer: 'Philemon', scripture: 'Philemon 1:10 - I appeal to you for my child, Onesimus.', keywords: ['philemon'] },
+      { id: 45, difficulty: 'hard', category: 'Old Testament', question: 'Who was the left-handed judge who defeated the Moabite King Eglon?', options: ['Ehud', 'Othniel', 'Shamgar', 'Jephthah'], answer: 'Ehud', scripture: 'Judges 3:15 - Ehud the son of Gera, a Benjamite, a left-handed man.', keywords: ['ehud'] },
+      { id: 46, difficulty: 'hard', category: 'New Testament', question: 'In the Book of Acts, who fell out of a window after falling asleep during Pauls long sermon?', options: ['Eutychus', 'Tychicus', 'Agabus', 'Silas'], answer: 'Eutychus', scripture: 'Acts 20:9 - A certain young man named Eutychus... sank into a deep sleep and fell down from the third story.', keywords: ['eutychus'] },
+      { id: 47, difficulty: 'hard', category: 'Old Testament', question: 'What wicked queen had the prophets of God killed and threatened Elijah?', options: ['Jezebel', 'Athaliah', 'Herodias', 'Vashti'], answer: 'Jezebel', scripture: '1 Kings 19:2 - Jezebel sent a messenger to Elijah, saying, "So let the gods do to me..."', keywords: ['jezebel'] },
+      { id: 48, difficulty: 'hard', category: 'New Testament', question: 'Which gospel writer was a tax collector before following Jesus?', options: ['Matthew', 'Luke', 'John', 'Mark'], answer: 'Matthew', scripture: 'Matthew 9:9 - As Jesus passed on from there, He saw a man named Matthew sitting at the tax office.', keywords: ['matthew'] },
+      { id: 49, difficulty: 'hard', category: 'Old Testament', question: 'Who succeeded Moses as the leader of Israel into the Promised Land?', options: ['Joshua', 'Caleb', 'Eleazar', 'Gideon'], answer: 'Joshua', scripture: 'Joshua 1:1-2 - Moses My servant is dead. Now therefore, arise, go over this Jordan.', keywords: ['joshua'] },
+      { id: 50, difficulty: 'hard', category: 'New Testament', question: 'Who was the seller of purple cloth from Thyatira who was baptized by Paul?', options: ['Lydia', 'Priscilla', 'Phoebe', 'Dorcas'], answer: 'Lydia', scripture: 'Acts 16:14 - A certain woman named Lydia, a seller of purple from the city of Thyatira.', keywords: ['lydia'] },
+      { id: 51, difficulty: 'hard', category: 'Old Testament', question: 'Which prophet married a woman named Gomer as a symbol of Israel unfaithfulness?', options: ['Hosea', 'Joel', 'Obadiah', 'Micah'], answer: 'Hosea', scripture: 'Hosea 1:2 - Go, take yourself a wife of harlotry... for the land has committed great harlotry.', keywords: ['hosea'] },
+      { id: 52, difficulty: 'hard', category: 'New Testament', question: 'Who was the first Christian Gentile convert baptized after a vision received by Peter?', options: ['Cornelius', 'Sergius Paulus', 'Lydia', 'The Ethiopian Eunuch'], answer: 'Cornelius', scripture: 'Acts 10:1 - There was a certain man in Caesarea called Cornelius, a centurion.', keywords: ['cornelius'] },
+      { id: 53, difficulty: 'hard', category: 'Old Testament', question: 'What was the name of the mountain where Elijah challenged the 450 prophets of Baal?', options: ['Mount Carmel', 'Mount Sinai', 'Mount Nebo', 'Mount Ararat'], answer: 'Mount Carmel', scripture: '1 Kings 18:19 - Gather all Israel to me on Mount Carmel, the 450 prophets of Baal.', keywords: ['carmel', 'mount carmel'] },
+      { id: 54, difficulty: 'hard', category: 'New Testament', question: 'Which disciple replaced Judas Iscariot among the twelve Apostles?', options: ['Matthias', 'Barnabas', 'Barsabbas', 'Timothy'], answer: 'Matthias', scripture: 'Acts 1:26 - And they cast their lots, and the lot fell on Matthias.', keywords: ['matthias'] },
+      { id: 55, difficulty: 'hard', category: 'Old Testament', question: 'Who was King David\'s best friend and son of King Saul?', options: ['Jonathan', 'Abner', 'Absalom', 'Mephibosheth'], answer: 'Jonathan', scripture: '1 Samuel 18:1 - The soul of Jonathan was knit to the soul of David.', keywords: ['jonathan'] },
 
-      // MASTER
-      { id: 15, difficulty: 'master', category: 'Old Testament', question: 'Which priest and scribe led the second group returning from Babylon?', options: ['Ezra', 'Nehemiah', 'Zerubbabel', 'Haggai'], answer: 'Ezra', scripture: 'Ezra 7:6 - Ezra came up from Babylon, well versed in the Law of Moses.', keywords: ['ezra'] },
-      { id: 16, difficulty: 'master', category: 'New Testament', question: 'Which high priest presided over the trial of Jesus before the Sanhedrin?', options: ['Caiaphas', 'Annas', 'Gamaliel', 'Alexander'], answer: 'Caiaphas', scripture: 'Matthew 26:57 - Those who arrested Jesus took him to Caiaphas the high priest.', keywords: ['caiaphas'] },
-      { id: 17, difficulty: 'master', category: 'Old Testament', question: 'Who was the grandfather of King David?', options: ['Boaz', 'Obed', 'Jesse', 'Salmon'], answer: 'Obed', scripture: 'Ruth 4:22 - Obed fathered Jesse, and Jesse fathered David.', keywords: ['obed'] },
-      { id: 18, difficulty: 'master', category: 'New Testament', question: 'How many people were baptized on the day of Pentecost?', options: ['3000', '5000', '120', '500'], answer: '3000', scripture: 'Acts 2:41 - And there were added that day about three thousand souls.', keywords: ['3000', 'three thousand'] }
+      // MASTER (20 Questions - Reached after 15 Hard correct)
+      { id: 56, difficulty: 'master', category: 'Old Testament', question: 'Which priest and scribe led the second group of exiles returning from Babylon?', options: ['Ezra', 'Nehemiah', 'Zerubbabel', 'Haggai'], answer: 'Ezra', scripture: 'Ezra 7:6 - Ezra came up from Babylon, well versed in the Law of Moses.', keywords: ['ezra'] },
+      { id: 57, difficulty: 'master', category: 'New Testament', question: 'Which high priest presided over the trial of Jesus before the Sanhedrin?', options: ['Caiaphas', 'Annas', 'Gamaliel', 'Alexander'], answer: 'Caiaphas', scripture: 'Matthew 26:57 - Those who arrested Jesus took him to Caiaphas the high priest.', keywords: ['caiaphas'] },
+      { id: 58, difficulty: 'master', category: 'Old Testament', question: 'Who was the grandfather of King David mentioned in the genealogy of Ruth?', options: ['Obed', 'Boaz', 'Jesse', 'Salmon'], answer: 'Obed', scripture: 'Ruth 4:22 - Obed fathered Jesse, and Jesse fathered David.', keywords: ['obed'] },
+      { id: 59, difficulty: 'master', category: 'New Testament', question: 'How many people were baptized on the day of Pentecost after Peters sermon?', options: ['3000', '5000', '120', '500'], answer: '3000', scripture: 'Acts 2:41 - And there were added that day about three thousand souls.', keywords: ['3000', 'three thousand'] },
+      { id: 60, difficulty: 'master', category: 'Old Testament', question: 'Which king of Judah was struck with leprosy for attempting to burn incense in the Temple?', options: ['Uzziah', 'Hezekiah', 'Rehoboam', 'Manasseh'], answer: 'Uzziah', scripture: '2 Chronicles 26:19 - Leprosy broke out on his forehead in the presence of the priests.', keywords: ['uzziah'] },
+      { id: 61, difficulty: 'master', category: 'New Testament', question: 'Which lawyer and Pharisee advised the Sanhedrin to leave the Apostles alone?', options: ['Gamaliel', 'Nicodemus', 'Tertullus', 'Alexander'], answer: 'Gamaliel', scripture: 'Acts 5:34 - A Pharisee named Gamaliel, a teacher of the law held in respect by all.', keywords: ['gamaliel'] },
+      { id: 62, difficulty: 'master', category: 'Old Testament', question: 'Who was the king of Salem and priest of God Most High who blessed Abraham?', options: ['Melchizedek', 'Abimelech', 'Jethro', 'Hiram'], answer: 'Melchizedek', scripture: 'Genesis 14:18 - Then Melchizedek king of Salem brought out bread and wine; he was the priest of God Most High.', keywords: ['melchizedek'] },
+      { id: 63, difficulty: 'master', category: 'New Testament', question: 'In which city were the followers of Jesus first called Christians?', options: ['Antioch', 'Jerusalem', 'Ephesus', 'Corinth'], answer: 'Antioch', scripture: 'Acts 11:26 - And the disciples were first called Christians in Antioch.', keywords: ['antioch'] },
+      { id: 64, difficulty: 'master', category: 'Old Testament', question: 'Which prophet saw a vision of a wheel within a wheel near the Chebar river?', options: ['Ezekiel', 'Daniel', 'Zechariah', 'Habakkuk'], answer: 'Ezekiel', scripture: 'Ezekiel 1:16 - Their appearance was like a wheel in the middle of a wheel.', keywords: ['ezekiel'] },
+      { id: 65, difficulty: 'master', category: 'New Testament', question: 'Who was the mother of Timothy who taught him the Holy Scriptures from childhood?', options: ['Eunice', 'Lois', 'Priscilla', 'Phoebe'], answer: 'Eunice', scripture: '2 Timothy 1:5 - The genuine faith that dwelt first in your grandmother Lois and your mother Eunice.', keywords: ['eunice'] }
     ];
 
-    // Game Variables
+    // Game State Variables
     let currentScore = 0;
     let currentLives = 3;
-    let streakCount = 0;
     let currentLevel = 'easy';
+    let levelCorrectCount = 0; // Tracks correct answers in CURRENT level (0 to 15)
+    const REQUIRED_CORRECT_PER_LEVEL = 15;
+
     let currentQuestion = null;
     let questionCounter = 0;
     let isGameActive = false;
     let isQuestionAnswered = false;
     let highScore = parseInt(localStorage.getItem('bible_trivia_highscore') || '0');
 
-    // No-Repeat System Variable
+    // Track used question IDs to prevent any question repeats
     let usedQuestionIds = new Set();
 
     // Voice & Speech Synthesis Variables
@@ -581,26 +632,23 @@
     }
 
     function getNextUnaskedQuestion() {
-      // Check if all questions in database have been asked
-      if (usedQuestionIds.size >= TRIVIA_DATABASE.length) {
-        // Entire question bank exhausted! Reset used pool and inform player
-        usedQuestionIds.clear();
-        updateBanner("All questions completed! Question pool refreshed.", "fa-rotate");
-      }
-
-      // Filter available questions by difficulty first
+      // Filter candidates matching current level and unasked
       let candidates = TRIVIA_DATABASE.filter(q => q.difficulty === currentLevel && !usedQuestionIds.has(q.id));
 
-      // Fallback 1: If current difficulty is fully exhausted, draw from any remaining unasked question
+      // Fallback 1: If current difficulty pool exhausted, draw from any remaining unasked question
       if (candidates.length === 0) {
         candidates = TRIVIA_DATABASE.filter(q => !usedQuestionIds.has(q.id));
       }
 
-      // Randomly pick one candidate question
+      // Fallback 2: If entire database exhausted, clear used pool and draw again
+      if (candidates.length === 0) {
+        usedQuestionIds.clear();
+        candidates = TRIVIA_DATABASE.filter(q => q.difficulty === currentLevel);
+      }
+
       const randomIndex = Math.floor(Math.random() * candidates.length);
       const selectedQuestion = candidates[randomIndex];
 
-      // Record ID so it NEVER repeats
       usedQuestionIds.add(selectedQuestion.id);
       return selectedQuestion;
     }
@@ -608,9 +656,7 @@
     function updateScoreBoard() {
       document.getElementById('highScoreText').innerText = highScore;
       document.getElementById('scoreText').innerText = currentScore;
-      
-      const remainingUnasked = TRIVIA_DATABASE.length - usedQuestionIds.size;
-      document.getElementById('remainingPoolText').innerText = remainingUnasked;
+      document.getElementById('levelProgressText').innerText = `${levelCorrectCount}/${REQUIRED_CORRECT_PER_LEVEL}`;
 
       const lvlBadge = document.getElementById('levelBadge');
       lvlBadge.innerText = currentLevel.toUpperCase();
@@ -634,12 +680,12 @@
       initEchoCancelledAudioContext();
       currentScore = 0;
       currentLives = 3;
-      streakCount = 0;
       questionCounter = 0;
       currentLevel = 'easy';
+      levelCorrectCount = 0;
       isGameActive = true;
       shouldBeListening = true;
-      usedQuestionIds.clear(); // Fresh session starts with full unasked pool
+      usedQuestionIds.clear();
 
       document.getElementById('actionBtnText').innerText = "Next Question";
       document.getElementById('actionBtn').classList.add('hidden');
@@ -681,7 +727,7 @@
 
       updateScoreBoard();
 
-      // Speak question while simultaneous listening is active
+      // Speak question while active listening is ready
       const spokenPrompt = `${q.question} Is it: ${q.options.join(', ')}?`;
       speakText(spokenPrompt);
     }
@@ -710,20 +756,41 @@
 
       if (isCorrect) {
         currentScore += (currentLevel === 'easy' ? 10 : currentLevel === 'medium' ? 20 : currentLevel === 'hard' ? 30 : 50);
-        streakCount++;
-        
-        if (streakCount >= 4) currentLevel = 'master';
-        else if (streakCount >= 3) currentLevel = 'hard';
-        else if (streakCount >= 2) currentLevel = 'medium';
+        levelCorrectCount++;
 
         if (currentScore > highScore) {
           highScore = currentScore;
           localStorage.setItem('bible_trivia_highscore', highScore.toString());
         }
 
+        let levelUpAnnouncement = "";
+
+        // Check 15-correct level advancement rule
+        if (levelCorrectCount >= REQUIRED_CORRECT_PER_LEVEL) {
+          if (currentLevel === 'easy') {
+            currentLevel = 'medium';
+            levelCorrectCount = 0;
+            levelUpAnnouncement = " Level Up! You answered 15 correct in Easy! Advancing to Medium level!";
+          } else if (currentLevel === 'medium') {
+            currentLevel = 'hard';
+            levelCorrectCount = 0;
+            levelUpAnnouncement = " Level Up! You answered 15 correct in Medium! Advancing to Hard level!";
+          } else if (currentLevel === 'hard') {
+            currentLevel = 'master';
+            levelCorrectCount = 0;
+            levelUpAnnouncement = " Master Level Achieved! You answered 15 correct in Hard! Entering Master difficulty!";
+          }
+        }
+
         updateScoreBoard();
-        updateBanner("Correct! Well done!", "fa-circle-check");
-        speakText("Correct! " + q.answer + " is the right answer.");
+        
+        if (levelUpAnnouncement) {
+          updateBanner(`Correct! ${levelUpAnnouncement}`, "fa-circle-check");
+          speakText(`Correct! ${q.answer} is right.${levelUpAnnouncement}`);
+        } else {
+          updateBanner("Correct! Well done!", "fa-circle-check");
+          speakText(`Correct! ${q.answer} is the right answer.`);
+        }
 
       } else {
         if (clickedBtn) {
@@ -732,8 +799,6 @@
         }
 
         currentLives--;
-        streakCount = 0;
-        currentLevel = 'easy';
         updateScoreBoard();
 
         document.getElementById('scriptureText').innerText = q.scripture;
@@ -817,7 +882,6 @@
       initSpeechSynthesis();
       initSpeechRecognition();
       document.getElementById('highScoreText').innerText = highScore;
-      document.getElementById('remainingPoolText').innerText = TRIVIA_DATABASE.length;
     };
   </script>
 </body>
